@@ -1,0 +1,35 @@
+.wallet-container {
+  padding: 20px;
+  max-width: 800px;
+  margin: 0 auto;
+}
+
+.wallet-credentials {
+  background-color: var(--secondary);
+  color: white;
+  padding: 20px;
+  border-radius: 8px;
+  margin-bottom: 20px;
+}
+
+.wallet-title {
+  font-weight: bold;
+  font-size: 18px;
+  color: var(--white);
+}
+
+.wallet-verified {
+    color: var(--white);
+    font-weight: 500;
+    padding-left: 1rem;
+    padding-top: .50rem;
+}
+
+.wallet-address {
+  background-color: #F4D393;
+  color: var(--primary-text);
+  padding: 10px;
+  margin: 10px 0;
+  word-break: break-all;
+  border-radius: 5px;
+}

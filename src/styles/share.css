@@ -1,0 +1,57 @@
+.share-card-subtitle {
+  font-size: 14px;
+  color: #444;
+  margin-bottom: 24px;
+}
+
+.share-form-row {
+  display: flex;
+  justify-content: space-between;
+  gap: 24px;
+  margin-bottom: 24px;
+  flex-wrap: wrap;
+}
+
+.share-form-group {
+  flex: 1;
+  min-width: 200px;
+}
+
+label {
+  display: block;
+  margin-bottom: 8px;
+  font-weight: 500;
+  font-size: 14px;
+}
+
+.share-select-input {
+  width: 100%;
+  padding: 10px;
+  border-radius: 6px;
+  border: 1px solid var(--border);
+  font-size: 14px;
+  background-color: white;
+}
+
+.share-button-row {
+  display: flex;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 16px;
+}
+
+.share-btn {
+  flex: 1;
+  min-width: 200px;
+  background-color: var(--default-btn);
+  border: none;
+  border-radius: 6px;
+  padding: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.share-btn:hover {
+  background-color: #e6e6e6;
+}

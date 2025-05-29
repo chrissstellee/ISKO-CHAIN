@@ -1,0 +1,194 @@
+.modal-root {
+  position: relative;
+  z-index: 50;
+}
+
+.modal-backdrop {
+  position: fixed;
+  inset: 0;
+  background-color: rgba(0, 0, 0, 0.25);
+  backdrop-filter: blur(4px);
+}
+
+.modal-container {
+  position: fixed;
+  inset: 0;
+  overflow-y: auto;
+}
+
+.modal-wrapper {
+  display: flex;
+  min-height: 100%;
+  align-items: center;
+  justify-content: center;
+  padding: 1rem;
+}
+
+.modal-panel {
+  width: 100%;
+  max-width: 64rem; 
+  transform: none;
+  overflow: hidden;
+  border-radius: 1rem;
+  background-color: white;
+  padding: 1.5rem;
+  text-align: left;
+  vertical-align: middle;
+  box-shadow: 0 10px 15px rgba(0, 0, 0, 0.1);
+  transition: all 0.2s ease-in-out;
+}
+
+.modal-title {
+  font-size: 1.5rem;
+  font-weight: 600;
+  line-height: 1.5rem;
+  color: #1f2937;
+  margin-bottom: 1rem;
+}
+
+.modal-content {
+  border: 1px solid #e5e7eb; 
+  border-radius: 0.375rem;
+  padding: 1rem;
+  background-color: #f9fafb; 
+  min-height: 400px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.modal-placeholder {
+  color: #6b7280;
+  text-align: center;
+}
+
+.modal-footer {
+  margin-top: 1.5rem;
+  text-align: right;
+}
+
+.modal-close-button {
+  display: inline-flex;
+  justify-content: center;
+  border-radius: 0.375rem;
+  border: 1px solid transparent;
+  background-color: var(--default-btn);
+  padding: 0.5rem 1rem;
+  color: var(--primary-text);
+  font-size: 0.875rem;
+  font-weight: 500;
+  transition: background-color 0.2s;
+}
+
+.modal-close-button:hover {
+  background-color: brightness(2); 
+}
+
+/* For QR Code modal */
+.student-qr-placeholder {
+  width: 200px;
+  height: 200px;
+  background-color: #f3f4f6;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #9ca3af;
+  font-size: 14px;
+  font-style: italic;
+  border-radius: 0.5rem;
+  border: 1px dashed #d1d5db;
+}
+
+/* Base modal layout */
+.student-qr-modal-backdrop {
+  position: fixed;
+  inset: 0;
+  background-color: rgba(0, 0, 0, 0.25);
+  backdrop-filter: blur(4px);
+}
+.student-qr-modal-container {
+  position: fixed;
+  inset: 0;
+  overflow-y: auto;
+
+}
+.student-qr-modal-wrapper {
+  display: flex;
+  min-height: 100%;
+  align-items: center;
+  justify-content: center;
+  padding: 1rem;
+}
+
+/* Compact modal panel */
+/* .student-qr-modal-panel {
+  width: auto;
+  max-width: 320px;
+  background: white;
+  border-radius: 1rem;
+  padding: 2rem;
+  box-shadow: 0 10px 15px rgba(0, 0, 0, 0.1);
+} */
+ .student-qr-modal-panel {
+  position: relative;
+  width: auto;
+  max-width: 320px;
+  background: white;
+  border-radius: 1rem;
+  padding: 2rem;
+  box-shadow: 0 10px 15px rgba(0, 0, 0, 0.1);
+}
+
+
+/* Content container (no padding/box) */
+.student-qr-modal-content {
+  padding: 0;
+  background: none;
+  border: none;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  margin-bottom: 1.5rem;
+}
+
+/* Footer & Buttons */
+.student-qr-modal-footer {
+  display: flex;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.student-qr-btn {
+  flex: 1;
+  background-color: #f3f4f6;
+  border: none;
+  border-radius: 6px;
+  padding: 10px;
+  font-weight: 500;
+  font-size: 0.875rem;
+  cursor: pointer;
+}
+
+.student-qr-btn:hover {
+  background-color: #e5e7eb;
+}
+
+.student-qr-btn-close {
+  background-color: #e5e7eb;
+}
+
+/* For close icon */
+.student-qr-close-icon {
+  position: absolute;
+  top: 1rem;
+  right: 1rem;
+  background: transparent;
+  border: none;
+  font-size: 1.25rem;
+  color: #6b7280;
+  cursor: pointer;
+}
+
+.student-qr-close-icon:hover {
+  color: #111827;
+}

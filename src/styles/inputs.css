@@ -1,0 +1,68 @@
+.form-group {
+  margin-bottom: 20px;
+}
+
+.form-control {
+  width: 100%;
+  padding: 10px 12px;
+  font-size: 14px;
+  border: 1px solid #ccc;
+  border-radius: 6px;
+}
+
+.input-row {
+  display: flex;
+  gap: 10px;
+  align-items: flex-start; /* align top to keep labels aligned */
+}
+
+.input-column {
+  flex: 1; /* each takes equal width */
+  display: flex;
+  flex-direction: column;
+}
+
+.input-column--large {
+  flex: 3;  /* takes 3 parts */
+}
+
+.input-column--small {
+  flex: 1;  /* takes 1 part */
+}
+
+.date-picker {
+  padding: 10px 12px;
+  border: 1px solid #ccc;
+  border-radius: 6px;
+  font-size: 14px;
+  width: 100%; /* make date picker fill the column like form-control */
+}
+
+.metadata-textarea {
+  width: 100%;
+  height: 120px;
+  padding: 12px;
+  border: 1px solid #ccc;
+  border-radius: 6px;
+  font-size: 14px;
+}
+
+.form-control:focus,
+.date-picker:focus,
+.metadata-textarea:focus {
+  outline: none;
+  border: 1px solid #ccc; 
+  box-shadow: none;       
+}
+
+/* For error fields */
+.input-error {
+  color: var(--red);
+  font-size: 12px;
+  margin-top: 4px;
+  display: block;
+}
+
+.input-error-border {
+  border: 1.5px solid var(--red) !important;
+}

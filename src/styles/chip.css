@@ -1,0 +1,38 @@
+/* ----- CHIPS STYLING ----- */
+.status-cell {
+  text-align: center;
+  vertical-align: middle;
+  padding: 10px;
+}
+
+/* CHIP layout */
+.chip {
+  padding: 3px 10px;
+  border-radius: 12px;
+  font-size: 12px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 80px;
+}
+
+/* CHIP color variations */
+.chip.success {
+  background-color: var(--success-chip-bg-color, #d4f7d4);
+  color: var(--success-chip-text-color, #2e7d32);
+}
+
+.chip.error {
+  background-color: var(--error-chip-bg-color, #ffd6d6);
+  color: var(--error-chip-text-color, #b00020);
+}
+
+.chip.process {
+  background-color: var(--warning-chip-bg-color, #fff3cd);
+  color: var(--warning-chip-text-color, #856404);
+}
+
+.chip.default {
+  background-color: var(--table-header-color, #e0e0e0);
+  color: var(--primary-text-color, #333);
+}

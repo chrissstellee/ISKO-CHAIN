@@ -1,0 +1,210 @@
+
+/* QR Code Options */
+.qr-code-options {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1rem;
+  margin-top: 1rem;
+}
+
+
+.upload-label {
+  background-color: #e5e7eb;
+  padding: 0.5rem 1.25rem;
+  border-radius: 0.375rem;
+  cursor: pointer;
+  font-weight: 500;
+}
+
+.upload-label input[type="file"] {
+  display: none;
+}
+
+/* For QR Code */
+.qr-preview {
+  max-width: 200px;
+  border: 1px solid #d1d5db;
+  border-radius: 0.375rem;
+  margin-top: 0.5rem;
+}
+
+.qr-code-box {
+  background-color: #f3f4f6;
+  border: 2px dashed #d1d5db;
+  border-radius: 0.5rem;
+  padding: 1.5rem;
+  margin-top: 1rem;
+  text-align: center;
+}
+
+.qr-code-title {
+  font-weight: 600;
+  font-size: 1rem;
+  margin-bottom: 1rem;
+  color: var(--primary-text);
+}
+
+.qr-code-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  align-items: center;
+  justify-content: center;
+}
+
+.qr-preview {
+  max-width: 250px;
+  border: 1px solid #d1d5db;
+  border-radius: 0.375rem;
+  margin-top: 1rem;
+}
+
+.qr-preview-wrapper {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 200px; /* or auto depending on design */
+}
+
+
+/* For search identifier */
+.verification-input-group {
+  display: flex;
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+}
+
+.identifier-input-field {
+  flex: 1;
+  padding: 0.5rem 1rem;
+  border: 1px solid #ccc;
+  border-radius: 0.375rem;
+  background-color: white;
+  color: #111827; /* dark gray for text */
+  outline: none;
+  transition: border-color 0.2s ease;
+}
+
+.identifier-input-field:focus {
+  background-color: white;
+  color: #111827;
+}
+
+
+/* For success results */
+.verification-result {
+  text-align: center;
+  color: var(--green);
+}
+
+.check-icon {
+  font-size: 2rem;
+  margin-bottom: 0.5rem;
+}
+
+.result-title {
+  font-size: 1.125rem;
+  font-weight: 600;
+}
+
+.result-subtext {
+  color: var(--border);
+  font-size: 0.875rem;
+}
+
+/* For invalid results */
+.verification-invalid {
+  text-align: center;
+  color: var(--red);
+}
+
+.invalid-icon {
+  font-size: 2rem;
+  margin-bottom: 0.5rem;
+}
+
+.invalid-title {
+  font-size: 1.125rem;
+  font-weight: 600;
+}
+
+
+
+/* For grid */
+.details-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr; /* Two equal columns */
+  gap: 2rem;
+  margin-top: 1.5rem;
+  padding-left: 3rem;
+}
+
+/* Adjust the viewer to grow in its column */
+.certificate-viewer {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+}
+
+/* Let placeholder expand but stay within column bounds */
+.certificate-placeholder {
+  background-color: #f3f4f6;
+  border: 2px dashed #d1d5db;
+  border-radius: 0.5rem;
+  padding: 1.5rem;
+  width: 100%;
+  aspect-ratio: 4 / 3; /* Optional: Keeps it rectangular like a certificate */
+  max-width: 100%;
+  max-height: 100%;
+  box-sizing: border-box;
+  overflow: auto;
+  margin-bottom: 1rem;
+}
+
+/* For verification history */
+.verification-history {
+  margin-top: 1.5rem;
+  font-size: 0.875rem;
+  color: #6b7280;
+}
+
+.history-tags {
+  display: flex;
+  gap: 1rem;
+  margin-top: 0.5rem;
+}
+
+.history-tags span {
+  background-color: #e5e7eb;
+  padding: 0.25rem 1rem;
+  border-radius: 9999px;
+}
+
+
+/* For uploading */
+.upload-label {
+  background-color: #e5e7eb;
+  padding: 0.5rem 1.25rem;
+  border-radius: 0.375rem;
+  cursor: pointer;
+  font-weight: 500;
+  transition: background-color 0.2s;
+}
+
+.upload-label:hover {
+  background-color: #d1d5db;
+}
+
+.upload-label input[type="file"] {
+  display: none;
+}
+
+
+@media (min-width: 480px) {
+  .qr-code-actions {
+    flex-direction: row;
+  }
+}

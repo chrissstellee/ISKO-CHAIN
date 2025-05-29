@@ -1,0 +1,55 @@
+.admin-header-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1rem; /* optional spacing below */
+}
+
+
+/* Quick Stats Layout */
+.stats-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 1rem;
+  margin-top: 1rem;
+}
+
+.stat-box {
+  background-color: #f9fafc;
+  border: 1px solid #ddd;
+  border-radius: 0.5rem;
+  padding: 1rem;
+  text-align: center;
+}
+
+.stat-number {
+  font-size: 1.5rem;
+  font-weight: bold;
+  color: var(--primary);
+}
+
+.stat-label {
+  margin-top: 0.25rem;
+  font-size: 0.875rem;
+  color: #444;
+}
+
+/* styles/credential-form.css */
+.credential-form {
+  max-width: 800px;
+  margin: 0 auto;
+  padding: 1rem;
+}
+
+.form-group {
+  margin-bottom: 1.5rem;
+}
+
+.form-select {
+  @apply w-full border rounded-md px-3 py-2 text-sm;
+}
+
+.calendar-icon {
+  @apply absolute right-2 top-2.5 h-4 w-4 text-gray-500;
+  pointer-events: none;
+}
