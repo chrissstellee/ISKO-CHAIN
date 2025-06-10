@@ -4,6 +4,8 @@ import Navbar from '@/components/navbar';
 import CredentialForm from '@/components/form/credential-form';
 import RecentActivity from '@/app/admin/recent-activity';
 import Dashboard from '@/app/admin/dashboard';
+import AddUserForm from '@/components/form/add-user-form';
+
 
 import '@/styles/card.css';
 import '@/styles/text.css';
@@ -57,6 +59,9 @@ export default function Admin() {
         {/* Issue Credential Form Component */}
         <CredentialForm />
 
+        {/* Add User Form for Admins */}
+        <AddUserForm />
+        
         {/* Recent Activity */}
         <RecentActivity activityData={activityData} />
       </div>

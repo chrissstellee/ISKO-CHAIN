@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-unused-vars */
 import { Dialog, Transition } from '@headlessui/react';
 import { Fragment } from 'react';
 import '@/styles/modal.css';
@@ -23,32 +24,6 @@ export default function QRCodeModal({ isOpen, onClose, qrValue }: QRCodeModalPro
     link.click(); // Trigger the download
   };
 
-  // Function to share the QR code using the Web Share API
-  // const shareQR = async () => {
-  //   const canvas = document.getElementById('student-qr-code') as HTMLCanvasElement;
-  //   if (!canvas) return;
-
-  //   canvas.toBlob(async (blob) => {
-  //     if (!blob) return;
-
-  //     const file = new File([blob], 'qr-code.png', { type: 'image/png' });
-
-  //     // Safely check for Web Share API support
-  //     if (navigator.share && navigator.canShare && navigator.canShare({ files: [file] })) {
-  //       try {
-  //         await navigator.share({
-  //           files: [file],
-  //           title: 'QR Code',
-  //           text: 'Scan this QR Code to access credentials.',
-  //         });
-  //       } catch (err) {
-  //         console.error('Sharing failed:', err);
-  //       }
-  //     } else {
-  //       alert('Sharing is not supported on this device or browser.');
-  //     }
-  //   });
-  // };
 
   return (
     // Animate the modal appearance using Headless UI Transition

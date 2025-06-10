@@ -15,7 +15,7 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "PUPQCHAIN",
+  title: "ISKO-CHAIN",
   description: "Blockchain-Based Academic Credential Verification System",
   icons: {
     icon: "/favicon.svg",

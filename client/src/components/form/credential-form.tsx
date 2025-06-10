@@ -1,5 +1,10 @@
+/* eslint-disable @typescript-eslint/no-unused-vars */
+/* eslint-disable @typescript-eslint/no-explicit-any */
 "use client";
 import { useState, ChangeEvent } from "react";
+import { useAccount, useWalletClient } from "wagmi";
+import { ethers } from "ethers";
+import IskoChainCredentialABI from "@/lib/IskoChainCredential.json"; // Adjust as needed
 import '@/styles/card.css';
 import '@/styles/text.css';
 import '@/styles/button.css';
@@ -7,6 +12,8 @@ import '@/styles/admin.css';
 import '@/styles/inputs.css';
 import '@/styles/table.css';
 import '@/styles/chip.css';
+
+const CONTRACT_ADDRESS = process.env.NEXT_PUBLIC_DEPLOYED_CONTRACT_ADDRESS; // TODO: Replace with your contract address
 
 interface CredentialData {
   credentialType: string;
@@ -27,6 +34,10 @@ export default function IssueCredentialsForm({ onSubmit }: Props) {
   const [issueDate, setIssueDate] = useState("");
   const [metadata, setMetadata] = useState("");
   const [errors, setErrors] = useState<Record<string, string>>({});
+  const [status, setStatus] = useState(""); // For UX status messages
+
+  const { address, isConnected } = useAccount();
+  const { data: walletClient } = useWalletClient();
 
   const getTodayDateString = () => {
     const today = new Date();
@@ -54,19 +65,6 @@ export default function IssueCredentialsForm({ onSubmit }: Props) {
     return Object.keys(newErrors).length === 0;
   };
 
-  const handleSubmit = () => {
-    if (validateForm()) {
-      const data: CredentialData = {
-        credentialType,
-        studentId,
-        credentialDetails,
-        issueDate,
-        metadata,
-      };
-      if (onSubmit) onSubmit(data);
-    }
-  };
-
   // Reset all fields
   const handleRefresh = () => {
     setCredentialType('');
@@ -75,9 +73,81 @@ export default function IssueCredentialsForm({ onSubmit }: Props) {
     setIssueDate('');
     setMetadata('');
     setErrors({});
+    setStatus('');
   };
 
+  // Main submission logic (API + blockchain)
+  const handleSubmit = async () => {
+    if (!validateForm()) return;
 
+    setStatus("Uploading metadata to backend server...");
+    try {
+      // 1. Call your NestJS backend API (NOT Next.js API route)
+      const res = await fetch("http://localhost:3001/credentials/issue", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          credentialType,
+          studentId,
+          credentialDetails,
+          issueDate,
+          metadata,
+        }),
+      });
+
+      const { tokenURI, walletAddress, error } = await res.json();
+
+      if (error) {
+        setStatus(error);
+        return;
+      }
+      if (!tokenURI || !walletAddress) {
+        setStatus("No credential info returned from server.");
+        return;
+      }
+
+      setStatus("Minting NFT on blockchain...");
+      if (!walletClient || !isConnected) {
+        setStatus("Wallet not connected.");
+        return;
+      }
+
+      // Get ethers.js signer from window.ethereum (v6)
+      if (!window.ethereum) {
+        setStatus("No wallet extension found.");
+        return;
+      }
+
+      if (!CONTRACT_ADDRESS) {
+        setStatus("Smart contract address is not configured.");
+        return;
+      }
+      const ethersProvider = new ethers.BrowserProvider(window.ethereum);
+      const signer = await ethersProvider.getSigner();
+      const contract = new ethers.Contract(CONTRACT_ADDRESS, IskoChainCredentialABI, signer);
+
+      // IMPORTANT: Mint to student walletAddress (not studentId)
+      const tx = await contract.issueCredential(walletAddress, tokenURI);
+      await tx.wait();
+
+      setStatus("✅ Credential issued successfully!");
+      handleRefresh();
+
+      // Optional: Call onSubmit prop for parent
+      if (onSubmit) {
+        onSubmit({
+          credentialType,
+          studentId,
+          credentialDetails,
+          issueDate,
+          metadata,
+        });
+      }
+    } catch (err: any) {
+      setStatus("Blockchain mint failed. " + (err?.message || ""));
+      console.error(err);
+    }
+  };
 
   return (
     <div className="card">
@@ -85,7 +155,6 @@ export default function IssueCredentialsForm({ onSubmit }: Props) {
         <h2 className="card-title">Issue New Credentials</h2>
         <button className="refresh-button" onClick={handleRefresh}>⟳ Refresh</button>
       </div>
-
 
       <div className="form-group">
         <label className="input-label">Credential Type:</label>
@@ -144,9 +213,6 @@ export default function IssueCredentialsForm({ onSubmit }: Props) {
         </div>
       </div>
 
-
-
-
       <div className="form-group">
         <label className="input-label">Additional Metadata:</label>
         <textarea
@@ -158,11 +224,17 @@ export default function IssueCredentialsForm({ onSubmit }: Props) {
       </div>
 
       <div className="action-buttons">
-        <button className="prev-button">Preview</button>
-        <button className="issue-button" onClick={handleSubmit}>
+        <button className="prev-button" type="button">Preview</button>
+        <button className="issue-button" type="button" onClick={handleSubmit}>
           Issue Credential
         </button>
       </div>
+
+      {status && (
+        <div className="status-message" style={{ marginTop: 12 }}>
+          {status}
+        </div>
+      )}
     </div>
   );
 }
