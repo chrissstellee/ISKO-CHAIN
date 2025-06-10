@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "@/styles/globals.css";
 import "remixicon/fonts/remixicon.css";
+import Providers from '@/lib/providers'; // 👈 Import the wrapper you just created
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -29,9 +30,8 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body
-        className={`${geistSans.variable} ${geistMono.variable} antialiased`}
-      >
-        {children}
+        className={`${geistSans.variable} ${geistMono.variable} antialiased`}>
+        <Providers>{children}</Providers> {/* ✅ Now wraps in client-side context */}
       </body>
     </html>
   );
