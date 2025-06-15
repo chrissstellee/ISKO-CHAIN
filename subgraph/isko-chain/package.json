@@ -1,0 +1,21 @@
+{
+  "name": "isko-chain",
+  "license": "UNLICENSED",
+  "scripts": {
+    "codegen": "graph codegen",
+    "build": "graph build",
+    "deploy": "graph deploy --node https://api.studio.thegraph.com/deploy/ isko-chain",
+    "create-local": "graph create --node http://localhost:8020/ isko-chain",
+    "remove-local": "graph remove --node http://localhost:8020/ isko-chain",
+    "deploy-local": "graph deploy --node http://localhost:8020/ --ipfs http://localhost:5001 isko-chain",
+    "test": "graph test"
+  },
+  "dependencies": {
+    "@graphprotocol/graph-cli": "0.97.1",
+    "@graphprotocol/graph-ts": "0.37.0"
+  },
+  "devDependencies": {
+    "matchstick-as": "0.6.0"
+  },
+  "packageManager": "yarn@4.5.3+sha512.3003a14012e2987072d244c720506549c1aab73ee728208f1b2580a9fd67b92d61ba6b08fe93f6dce68fd771e3af1e59a0afa28dd242dd0940d73b95fedd4e90"
+}

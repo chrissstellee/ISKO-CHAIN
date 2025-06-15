@@ -1,10 +1,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-'use client';
 import { useEffect, useState } from "react";
+import { fetchCredentialsAndTransfers } from "@/lib/fetchStudentNFTs";
 import { useAccount } from "wagmi";
-import { ethers } from "ethers";
-import { getTokenIdsForOwner, fetchCredentialMetadata } from "@/lib/fetchStudentNFTs";
-import VerifiedSeal from "@/components/certificates/VerifiedSeal";
 
 export default function StudentCredentials() {
   const { address } = useAccount();
@@ -14,29 +11,13 @@ export default function StudentCredentials() {
   useEffect(() => {
     if (!address) return;
     setLoading(true);
-    const provider = new ethers.JsonRpcProvider(
-      "https://chaotic-hidden-field.base-sepolia.quiknode.pro/dfae31e97baf6393177d11cc5100b7e00bda47b4/"
-    );
-    (async () => {
-      try {
-        const tokenIds = await getTokenIdsForOwner(address, provider);
-        const creds = await Promise.all(
-          tokenIds.map(async (tokenId) => {
-            try {
-              const meta = await fetchCredentialMetadata(tokenId, provider);
-              return { ...meta, tokenId };
-            } catch {
-              return null; // skip burned/invalid
-            }
-          })
-        );
-        setCredentials(creds.filter(Boolean));
-      } catch (err) {
+    fetchCredentialsAndTransfers(address)
+      .then((result) => setCredentials(result.credentials || []))
+      .catch((err) => {
         setCredentials([]);
         console.error("Failed to fetch credentials", err);
-      }
-      setLoading(false);
-    })();
+      })
+      .finally(() => setLoading(false));
   }, [address]);
 
   if (!address) return <div>Please connect your wallet.</div>;
@@ -56,9 +37,11 @@ export default function StudentCredentials() {
                 <br />
                 Issued: {cred.issueDate}
                 <br />
+                Credential Code: {cred.credentialCode}
+                <br />
                 Token ID: {cred.tokenId}
               </p>
-              <VerifiedSeal />
+              <p className="student-verified-text">✓ Blockchain Verified</p>
             </div>
           </div>
         </div>

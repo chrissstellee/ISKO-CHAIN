@@ -66,3 +66,9 @@
 .input-error-border {
   border: 1.5px solid var(--red) !important;
 }
+
+.input-readonly {
+  background-color: #f3f4f6; /* light gray */
+  color: #6b7280;            /* gray text */
+  cursor: not-allowed;
+}

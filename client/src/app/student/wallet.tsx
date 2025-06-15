@@ -1,16 +1,36 @@
-/* eslint-disable @typescript-eslint/no-unused-vars */
 /* eslint-disable @typescript-eslint/no-explicit-any */
 "use client";
 
 import { useState, useEffect } from "react";
 import { useAccount } from "wagmi";
-import { ethers } from "ethers";
+import { createClient, gql } from "urql";
 import CertificateModal from "@/components/modal/certificate-modal";
 import DiplomaTemplate from "@/components/certificates/DiplomaTemplate";
-import VerifiedSeal from "@/components/certificates/VerifiedSeal";
-import { getTokenIdsForOwner, fetchCredentialMetadata } from "@/lib/fetchStudentNFTs";
+import { cacheExchange, fetchExchange } from "@urql/core";
+import "@/styles/card.css";
+import "@/styles/table.css";
 
-export default function BlockchainWallet() {
+const SUBGRAPH_URL = "https://api.studio.thegraph.com/query/113934/isko-chain/version/latest";
+const client = createClient({
+  url: SUBGRAPH_URL,
+  exchanges: [cacheExchange, fetchExchange],
+});
+
+const CREDENTIALS_QUERY = gql`
+  query CredentialsByOwner($owner: Bytes!) {
+    credentials(where: { owner: $owner }, orderBy: createdAt, orderDirection: desc) {
+      credentialCode
+      credentialType
+      credentialDetails
+      issueDate
+      tokenId
+      tokenURI
+      owner
+    }
+  }
+`;
+
+export default function StudentWallet() {
   const { address } = useAccount();
   const [credentials, setCredentials] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
@@ -21,38 +41,18 @@ export default function BlockchainWallet() {
     if (!address) return;
     setLoading(true);
 
-    // Base Sepolia RPC URL (QuickNode, public, etc)
-    const provider = new ethers.JsonRpcProvider(
-      "https://spring-few-bush.base-sepolia.quiknode.pro/0482e366e85f79ab64cd0afb9cf5691bf0607bb1/"
-    );
-
-    (async () => {
-      try {
-        const tokenIds = await getTokenIdsForOwner(address, provider);
-        const creds = await Promise.all(
-          tokenIds.map(async (tokenId) => {
-            const meta = await fetchCredentialMetadata(tokenId, provider);
-            return { ...meta, tokenId };
-          })
-        );
-        setCredentials(creds);
-      } catch (err) {
+    client
+      .query(CREDENTIALS_QUERY, { owner: address.toLowerCase() })
+      .toPromise()
+      .then((result) => {
+        setCredentials(result.data?.credentials || []);
+      })
+      .catch((err) => {
         setCredentials([]);
         console.error("Failed to fetch credentials", err);
-      }
-      setLoading(false);
-    })();
+      })
+      .finally(() => setLoading(false));
   }, [address]);
-
-  const verifiedCount = credentials.filter(c => (c.status ?? "verified").toLowerCase() === "verified").length;
-
-  const getStatusChipClass = (status: string) => {
-    switch ((status ?? "verified").toLowerCase()) {
-      case "verified": return "chip success";
-      case "invalid": return "chip error";
-      default: return "chip default";
-    }
-  };
 
   if (!address) return <div>Please connect your wallet.</div>;
   if (loading) return <div>Loading credentials...</div>;
@@ -65,34 +65,30 @@ export default function BlockchainWallet() {
       <div className="wallet-credentials">
         <p className="wallet-title">Your Secure Credential Wallet</p>
         <div className="wallet-address">{address}</div>
-        <div className="wallet-verified">{verifiedCount} Verified Credentials</div>
+        <div className="wallet-verified">{credentials.length} Verified Credentials</div>
         {/* <div style={{ marginTop: 10 }}>
           <VerifiedSeal />
         </div> */}
       </div>
-
+      <h2 className="card-title">My Credentials</h2>
       <div className="student-table-container">
         <table className="activity-table">
           <thead>
             <tr>
-              <th>Credential ID</th>
+              <th>Credential Code</th>
               <th>Type</th>
+              <th>Details</th>
               <th>Issue Date</th>
-              <th>Status</th>
               <th>Actions</th>
             </tr>
           </thead>
           <tbody>
             {credentials.map((cred) => (
               <tr key={cred.tokenId}>
-                <td>{cred.tokenId}</td>
+                <td>{cred.credentialCode || cred.tokenId}</td>
                 <td>{cred.credentialType || "—"}</td>
+                <td>{cred.credentialDetails || "—"}</td>
                 <td>{cred.issueDate || "—"}</td>
-                <td className="status-cell">
-                  <span className={getStatusChipClass(cred.status)}>
-                    {(cred.status ?? "Verified").charAt(0).toUpperCase() + (cred.status ?? "Verified").slice(1)}
-                  </span>
-                </td>
                 <td>
                   <button
                     className="view-button"
@@ -110,7 +106,7 @@ export default function BlockchainWallet() {
         </table>
       </div>
 
-      {/* Certificate Modal (DiplomaTemplate) */}
+      {/* Modal for viewing certificate details */}
       <CertificateModal
         isOpen={modalOpen}
         onClose={() => setModalOpen(false)}

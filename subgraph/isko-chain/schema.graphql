@@ -1,0 +1,79 @@
+type Approval @entity(immutable: true) {
+  id: Bytes!
+  owner: Bytes! # address
+  approved: Bytes! # address
+  tokenId: BigInt! # uint256
+  blockNumber: BigInt!
+  blockTimestamp: BigInt!
+  transactionHash: Bytes!
+}
+
+type ApprovalForAll @entity(immutable: true) {
+  id: Bytes!
+  owner: Bytes! # address
+  operator: Bytes! # address
+  approved: Boolean! # bool
+  blockNumber: BigInt!
+  blockTimestamp: BigInt!
+  transactionHash: Bytes!
+}
+
+type BatchMetadataUpdate @entity(immutable: true) {
+  id: Bytes!
+  _fromTokenId: BigInt! # uint256
+  _toTokenId: BigInt! # uint256
+  blockNumber: BigInt!
+  blockTimestamp: BigInt!
+  transactionHash: Bytes!
+}
+
+type MetadataUpdate @entity(immutable: true) {
+  id: Bytes!
+  _tokenId: BigInt! # uint256
+  blockNumber: BigInt!
+  blockTimestamp: BigInt!
+  transactionHash: Bytes!
+}
+
+type OwnershipTransferred @entity(immutable: true) {
+  id: Bytes!
+  previousOwner: Bytes! # address
+  newOwner: Bytes! # address
+  blockNumber: BigInt!
+  blockTimestamp: BigInt!
+  transactionHash: Bytes!
+}
+
+type Credential @entity(immutable: true) {
+  id: ID!                         # Usually the tokenId as a string
+  tokenId: BigInt!
+  credentialCode: String          # Your custom code like "CERT-002312"
+  owner: Bytes!                   # Student's wallet address (current holder)
+  tokenURI: String!               # URI to the metadata (on IPFS or HTTP)
+  credentialType: String          # Degree/Certificate/Award
+  credentialDetails: String       # Title/description, e.g., "Capstone 1 Completion"
+  studentId: String               # For display/reference
+  issuer: String                  # Issuer's email address
+  issueDate: String               # From metadata
+
+  firstName: String
+  middleName: String
+  lastName: String
+  yearLevel: Int              # Store as String for compatibility (or Int if always numeric)
+  program: String                 # e.g., "Bachelor of Science in IT"
+  additionalInfo: String          # Any extra info/notes
+
+  createdAt: BigInt!              # Block timestamp of creation
+  updatedAt: BigInt!              # Last block timestamp of transfer or update
+}
+
+
+type Transfer @entity(immutable: true) {
+  id: Bytes!
+  from: Bytes! # address
+  to: Bytes! # address
+  tokenId: BigInt! # uint256
+  blockNumber: BigInt!
+  blockTimestamp: BigInt!
+  transactionHash: Bytes!
+}
