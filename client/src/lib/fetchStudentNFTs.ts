@@ -1,44 +1,46 @@
+/* eslint-disable @typescript-eslint/no-unused-vars */
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { ethers, ZeroAddress, JsonRpcProvider } from "ethers";
 import IskoChainCredentialABI from "@/lib/IskoChainCredential.json";
 
 const CONTRACT_ADDRESS = process.env.NEXT_PUBLIC_DEPLOYED_CONTRACT_ADDRESS!;
 
-// Adjusted helper for ethers v6, filters only EventLogs
-async function getAllEventsInChunks(
-    contract: ethers.Contract,
-    eventName: string,
-    topics: (string | null)[],
-    startBlock: number,
-    endBlock: number,
-    chunkSize = 9000
+// Helper to get all logs in small (10,000-block) chunks
+async function getAllTransferEventsInChunks(
+  contract: ethers.Contract,
+  startBlock: number,
+  endBlock: number,
+  chunkSize = 9000 // stay below 10k for safety
 ) {
-    let allEvents: ethers.EventLog[] = [];
-    for (let from = startBlock; from <= endBlock; from += chunkSize + 1) {
-        const to = Math.min(from + chunkSize, endBlock);
-        const eventFilter = contract.filters[eventName](...topics);
-        const logs = await contract.queryFilter(eventFilter, from, to);
-        // Only keep logs that have 'args'
-        const eventLogs = logs.filter((log): log is ethers.EventLog => 'args' in log);
-        allEvents = allEvents.concat(eventLogs);
-    }
-    return allEvents;
+  const filter = contract.filters.Transfer(null, null);
+  let allEvents: any[] = [];
+  for (let from = startBlock; from <= endBlock; from += chunkSize) {
+    const to = Math.min(from + chunkSize - 1, endBlock);
+    const events = await contract.queryFilter(filter, from, to);
+    allEvents = allEvents.concat(events);
+  }
+  return allEvents;
 }
 
-// Main function: find all tokenIds owned by `wallet`
-export async function getTokenIdsForOwner(wallet: string, provider: JsonRpcProvider) {
-    const contract = new ethers.Contract(CONTRACT_ADDRESS, IskoChainCredentialABI, provider);
+export async function getTokenIdsForOwner(wallet: string, provider: ethers.JsonRpcProvider) {
+  const contract = new ethers.Contract(CONTRACT_ADDRESS, IskoChainCredentialABI, provider);
 
-    const endBlock = await provider.getBlockNumber();
-    const startBlock = 26904257; // Or your contract deployment block
+  const endBlock = await provider.getBlockNumber();
+  const startBlock = 26904257; // Or your deployment block
 
-    // Use ZeroAddress for null address in ethers v6+
-    const toEvents = await getAllEventsInChunks(contract, "Transfer", [ZeroAddress, wallet], startBlock, endBlock);
-    const fromEvents = await getAllEventsInChunks(contract, "Transfer", [wallet, ZeroAddress], startBlock, endBlock);
+  const events = await getAllTransferEventsInChunks(contract, startBlock, endBlock);
 
-    const owned = new Set<number>();
-    toEvents.forEach((e) => owned.add(Number(e.args.tokenId)));
-    fromEvents.forEach((e) => owned.delete(Number(e.args.tokenId)));
-    return Array.from(owned);
+  const ownership: Record<string, string> = {};
+  for (const e of events) {
+    const from = (e as any).args?.from;
+    const to = (e as any).args?.to;
+    const tokenId = (e as any).args?.tokenId?.toString();
+    if (to && tokenId) ownership[tokenId] = to;
+  }
+
+  return Object.entries(ownership)
+    .filter(([_, owner]) => owner.toLowerCase() === wallet.toLowerCase())
+    .map(([tokenId]) => Number(tokenId));
 }
 
 // Fetch metadata for one credential

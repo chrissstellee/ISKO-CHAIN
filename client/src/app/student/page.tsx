@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-unused-vars */
 import Navbar from '@/components/navbar';
 import BlockchainWallet from '@/app/student/wallet';
 import Credentials from '@/app/student/credentials';
@@ -24,7 +25,7 @@ export default function Student() {
                 <BlockchainWallet />
                 
                 {/* For student's credentials */}
-                <Credentials />
+                {/* <Credentials /> */}
 
                 {/* For sharing credentials */}
                 <ShareCredentials />
