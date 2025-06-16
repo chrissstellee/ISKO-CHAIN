@@ -1,83 +1,105 @@
 /* eslint-disable @next/next/no-img-element */
-/* eslint-disable @typescript-eslint/no-unused-vars */
 /* eslint-disable @typescript-eslint/no-explicit-any */
 "use client";
 
 import React, { useState } from "react";
+import { createClient, gql } from "urql";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { ethers } from "ethers";
-import IskoChainCredentialABI from "@/lib/IskoChainCredential.json";
+import { cacheExchange, fetchExchange } from "@urql/core";
 import "@/styles/card.css";
 import "@/styles/text.css";
 import "@/styles/button.css";
 
-const CONTRACT_ADDRESS = process.env.NEXT_PUBLIC_DEPLOYED_CONTRACT_ADDRESS!;
-const PROVIDER_URL = "https://chaotic-hidden-field.base-sepolia.quiknode.pro/dfae31e97baf6393177d11cc5100b7e00bda47b4/"; // Replace with your own
+const SUBGRAPH_URL = "https://api.studio.thegraph.com/query/113934/isko-chain/version/latest";
+const client = createClient({
+  url: SUBGRAPH_URL,
+  exchanges: [cacheExchange, fetchExchange],
+});
 
-export default function Verification() {
-  const [credentialId, setCredentialId] = useState('');
-  const [qrImage, setQrImage] = useState<string | null>(null);
-  const [verificationStatus, setVerificationStatus] = useState<"idle"|"loading"|"verified"|"invalid">( "idle" );
-  const [credential, setCredential] = useState<any>(null);
+const CREDENTIAL_QUERY = gql`
+  query CredentialByCode($credentialCode: String!) {
+    credentials(where: { credentialCode: $credentialCode }) {
+      credentialCode
+      credentialType
+      credentialDetails
+      firstName
+      lastName
+      issueDate
+      issuer
+      program
+      tokenId
+      owner
+    }
+  }
+`;
+
+const TRANSFER_QUERY = gql`
+  query TransferByTokenId($tokenId: BigInt!) {
+    transfers(where: { tokenId: $tokenId }, orderBy: blockNumber, orderDirection: asc, first: 1) {
+      tokenId
+      from
+      to
+      blockNumber
+      transactionHash
+    }
+  }
+`;
+
+interface VerificationProps {
+  setCredential: (cred: any) => void;
+  setTransfer: (transfer: any) => void;
+}
+
+export default function Verification({ setCredential, setTransfer }: VerificationProps) {
+  const [credentialCode, setCredentialCode] = useState("");
+  const [verificationStatus, setVerificationStatus] = useState<"idle" | "loading" | "verified" | "invalid">("idle");
   const [error, setError] = useState<string | null>(null);
 
+  // For QR UI (just for looks, actual QR extraction not implemented)
+  const [qrImage, setQrImage] = useState<string | null>(null);
+
+  const handleVerify = async () => {
+    setVerificationStatus("loading");
+    setError(null);
+    setCredential(null);
+    setTransfer(null);
+
+    // 1. Query credential by credentialCode
+    const { data } = await client.query(CREDENTIAL_QUERY, { credentialCode }).toPromise();
+    const cred = data?.credentials?.[0];
+
+    if (!cred) {
+      setVerificationStatus("invalid");
+      setError("Credential not found.");
+      return;
+    }
+
+    setCredential(cred);
+
+    // 2. Query transfer info by tokenId
+    const { data: tData } = await client.query(TRANSFER_QUERY, { tokenId: cred.tokenId }).toPromise();
+    const transfer = tData?.transfers?.[0] || null;
+    setTransfer(transfer);
+
+    setVerificationStatus("verified");
+  };
+
+  const handleRefresh = () => {
+    setCredentialCode("");
+    setVerificationStatus("idle");
+    setError(null);
+    setCredential(null);
+    setTransfer(null);
+    setQrImage(null);
+  };
+
   const handleQrImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
-    // Simulate, or connect with a QR library to extract the credential ID
     const file = e.target.files?.[0];
     if (file) {
       const objectUrl = URL.createObjectURL(file);
       setQrImage(objectUrl);
-      // setVerificationStatus("verified");
+      // QR scanning not implemented, just UI
     }
-  };
-
-  // MAIN: Actual blockchain verification
-  const handleVerify = async () => {
-    setVerificationStatus("loading");
-    setCredential(null);
-    setError(null);
-
-    try {
-      const provider = new ethers.JsonRpcProvider(PROVIDER_URL);
-      const contract = new ethers.Contract(CONTRACT_ADDRESS, IskoChainCredentialABI, provider);
-
-      // 1. Try to get tokenURI to check if credential exists (not burned)
-      let tokenURI: string;
-      try {
-        tokenURI = await contract.tokenURI(Number(credentialId));
-      } catch (err) {
-        setVerificationStatus("invalid");
-        setError("Credential not found or has been revoked.");
-        return;
-      }
-
-      // 2. Fetch metadata from Pinata/IPFS
-      const metadataUrl = tokenURI.startsWith("ipfs://")
-        ? tokenURI.replace("ipfs://", "https://gateway.pinata.cloud/ipfs/")
-        : tokenURI;
-
-      const res = await fetch(metadataUrl);
-      if (!res.ok) {
-        setVerificationStatus("invalid");
-        setError("Failed to fetch credential metadata.");
-        return;
-      }
-      const meta = await res.json();
-
-      setCredential(meta);
-      setVerificationStatus("verified");
-    } catch (err: any) {
-      setVerificationStatus("invalid");
-      setError("Unexpected error. " + (err?.message || ""));
-    }
-  };
-
-  const handleRefresh = () => {
-    setCredentialId('');
-    setQrImage(null);
-    setVerificationStatus("idle");
-    setCredential(null);
-    setError(null);
   };
 
   return (
@@ -85,7 +107,7 @@ export default function Verification() {
       <h2 className="card-title">Verification Method</h2>
       <Tabs defaultValue="id" className="w-full">
         <TabsList>
-          <TabsTrigger value="id">ID Lookup</TabsTrigger>
+          <TabsTrigger value="id">Credential Code Lookup</TabsTrigger>
           <TabsTrigger value="qr">QR Code</TabsTrigger>
         </TabsList>
 
@@ -95,19 +117,23 @@ export default function Verification() {
           <div className="verification-input-group">
             <input
               type="text"
-              placeholder="Enter credential ID or tokenId..."
+              placeholder="Enter credential code..."
               className="identifier-input-field"
-              value={credentialId}
-              onChange={(e) => setCredentialId(e.target.value)}
+              value={credentialCode}
+              onChange={(e) => setCredentialCode(e.target.value)}
               disabled={verificationStatus === "loading"}
             />
-            <button className="verify-button" onClick={handleVerify} disabled={!credentialId || verificationStatus === "loading"}>
+            <button
+              className="verify-button"
+              onClick={handleVerify}
+              disabled={!credentialCode || verificationStatus === "loading"}
+            >
               {verificationStatus === "loading" ? "Verifying..." : "Verify"}
             </button>
           </div>
         </TabsContent>
 
-        {/* QR Verification Tab */}
+        {/* QR Code Tab */}
         <TabsContent value="qr">
           <button className="refresh-button" onClick={handleRefresh}>⟳ Refresh</button>
           <div className="qr-code-box">
@@ -123,9 +149,9 @@ export default function Verification() {
                 </div>
               </>
             ) : (
-              <div className="qr-preview-wrapper" style={{ flexDirection: 'column' }}>
+              <div className="qr-preview-wrapper" style={{ flexDirection: "column" }}>
                 <img src={qrImage} alt="QR Preview" className="qr-preview" />
-                <div style={{ marginTop: '1rem', display: 'flex', gap: '1rem' }}>
+                <div style={{ marginTop: "1rem", display: "flex", gap: "1rem" }}>
                   <label className="upload-label">
                     Upload Another
                     <input type="file" accept="image/*" onChange={handleQrImageUpload} />
@@ -139,14 +165,16 @@ export default function Verification() {
       </Tabs>
 
       {/* Result Display */}
-      {verificationStatus === 'verified' && credential && (
+      {verificationStatus === "verified" && (
         <div className="verification-result">
           <p className="result-title">Credential Successfully Verified!</p>
-          <p className="result-subtext">This credential has been cryptographically verified on the blockchain.</p>
+          <p className="result-subtext">
+            This credential has been cryptographically verified on the blockchain.
+          </p>
         </div>
       )}
 
-      {verificationStatus === 'invalid' && (
+      {verificationStatus === "invalid" && (
         <div className="verification-invalid">
           <div className="check-icon"><i className="ri-close-line"></i></div>
           <p className="invalid-title">Credential is Invalid!</p>

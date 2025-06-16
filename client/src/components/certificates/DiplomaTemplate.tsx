@@ -1,16 +1,18 @@
 // components/certificates/DiplomaTemplate.tsx
 
-import VerifiedSeal from "@/components/certificates/VerifiedSeal";
+// import VerifiedSeal from "@/components/certificates/VerifiedSeal";
 
 export default function DiplomaTemplate({
   credential,
 }: {
-  credential: {
+    credential: {
     credentialDetails: string;
     credentialType: string;
     studentId: string;
     issueDate: string;
-      tokenId?: string | number;
+    firstName: string;
+    lastName: string;
+      credentialCode: string;
     // Add any other meta fields here!
   };
 }) {
@@ -28,9 +30,9 @@ export default function DiplomaTemplate({
         position: "relative",
       }}
     >
-      <div style={{ position: "absolute", top: 24, right: 24 }}>
+      {/* <div style={{ position: "absolute", top: 24, right: 24 }}>
         <VerifiedSeal />
-      </div>
+      </div> */}
       <h2
         style={{
           fontFamily: "'Georgia', serif",
@@ -63,7 +65,7 @@ export default function DiplomaTemplate({
         This certifies that
         <br />
         <span style={{ fontWeight: 700, fontSize: 28 }}>
-          {credential.studentId || "Student"}
+          {(credential.firstName || "Student") + " " + (credential.lastName || "Student")}
         </span>
         <br />
         has been awarded:
@@ -108,7 +110,7 @@ export default function DiplomaTemplate({
           fontSize: 15,
         }}
       >
-        <b>Token ID:</b> {credential.tokenId ?? ""}
+        <b>Credential Code:</b> {credential.credentialCode ?? ""}
       </div>
     </div>
   );

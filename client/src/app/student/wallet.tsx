@@ -22,6 +22,8 @@ const CREDENTIALS_QUERY = gql`
       credentialCode
       credentialType
       credentialDetails
+      firstName
+      lastName
       issueDate
       tokenId
       tokenURI

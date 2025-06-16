@@ -1,92 +1,126 @@
+/* eslint-disable @typescript-eslint/no-unused-vars */
+/* eslint-disable @typescript-eslint/no-explicit-any */
 /* eslint-disable @next/next/no-img-element */
 "use client";
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import CertificateModal from "@/components/modal/certificate-modal";
 import "@/styles/verifier.css";
 import "@/styles/card.css";
 import "@/styles/text.css";
 import "@/styles/button.css";
+import React from 'react';
 
-export default function CredentialDetails() {
-  const [isModalOpen, setIsModalOpen] = useState(false);
+interface Props {
+  credential: any | null;
+  transfer: any | null;
+}
 
-  // Constants for easy backend integration
-  const studentName = "Juan Dela Cruz";
-  const studentId = "2019-00123-CM-0";
-  const course = "Bachelor of Science in Computer Science";
-  const school = "Polytechnic University of the Philippines";
+export default function CredentialDetails({ credential, transfer }: Props) {
+  const [isModalOpen, setIsModalOpen] = React.useState(false);
 
-  const issueDate = "May 15, 2023";
-  const credentialType = "Degree";
-  const issuer = "Office of the University Registrar";
+  if (!credential) {
+    return (
+      <div className="card" style={{ marginTop: 24 }}>
+        <h2 className="card-title">Credential Details</h2>
+        <div style={{ color: "#888", padding: 16 }}>No credential loaded. Please verify first.</div>
+      </div>
+    );
+  }
 
-  const tokenId = "#CP239432";
-  const contract = "0x673d...d28b";
-  const blockchain = "Base EVM";
-  const transaction = "0x5a12...c74e";
-
-  const verificationHistory = [
-    "May 12, 2025 10:30pm",
-    "May 01, 2025 10:30am",
-  ];
+  const {
+    credentialCode,
+    credentialType,
+    credentialDetails,
+    firstName,
+    lastName,
+    issueDate,
+    issuer,
+    program,
+    tokenId,
+    owner,
+  } = credential;
+  const blockchain = "Base Sepolia";
 
   return (
-    <div className="card">
+    <div className="card" style={{ marginTop: 24 }}>
       <h2 className="card-title">Credential Details</h2>
-
       <div className="details-grid">
         <div>
-          <p className="info-header">{course}</p>
-          <p className="info-section">{school}</p>
-
-          <div className="info-section">
-            <h3 className="info-header">Student Information</h3>
-            <p>Name: {studentName}</p>
-            <p>Student ID: {studentId}</p>
-          </div>
-
           <div className="info-section">
             <h3 className="info-header">Credential Information</h3>
-            <p>Issue Date: {issueDate}</p>
-            <p>Credential Type: {credentialType}</p>
-            <p>Issuer: {issuer}</p>
+            <p>
+              <b>Credential Code:</b> {credentialCode}
+            </p>
+            <p>
+              <b>Type:</b> {credentialType}
+            </p>
+            <p>
+              <b>Details:</b> {credentialDetails}
+            </p>
+            <p>
+              <b>Issuer:</b> {issuer}
+            </p>
+            <p>
+              <b>Issue Date:</b> {issueDate}
+            </p>
           </div>
-
+          <div className="info-section">
+            <h3 className="info-header">Student Information</h3>
+            <p>
+              <b>Name:</b> {firstName} {lastName}
+            </p>
+            <p>
+              <b>Program:</b> {program}
+            </p>
+          </div>
           <div className="info-section">
             <h3 className="info-header">Blockchain Information</h3>
-            <p>Token ID: {tokenId}</p>
-            <p>Contract: {contract}</p>
-            <p>Blockchain: {blockchain}</p>
-            <p>Transaction: {transaction}</p>
+            <p>
+              <b>Blockchain Network:</b> {blockchain}
+            </p>
+            <p>
+              <b>Token ID:</b> {tokenId}
+            </p>
+            <p>
+              <b>Owner:</b> {owner}
+            </p>
+            {transfer && (
+              <>
+                <p>
+                  <b>Block Number:</b> {transfer.blockNumber}
+                </p>
+                <p>
+                  <b>Transaction Hash:</b>{" "}
+                  <a
+                    href={`https://sepolia.basescan.org/tx/${transfer.transactionHash}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    style={{ color: "#b71c1c" }}
+                  >
+                    {transfer.transactionHash}
+                  </a>
+                </p>
+              </>
+            )}
           </div>
         </div>
-
-        {/* View certificate */}
+        {/* Certificate Preview (Modal Trigger) */}
         <div className="certificate-viewer">
           <div className="certificate-placeholder" />
-          <button
-            className="certificate-button"
-            onClick={() => setIsModalOpen(true)}
-          >
+          <button className="certificate-button" onClick={() => setIsModalOpen(true)}>
             View Certificate
           </button>
         </div>
       </div>
-
-      <div className="verification-history">
-        <h3>Verification History</h3>
-        <div className="history-tags">
-          {verificationHistory.map((item, index) => (
-            <span key={index}>{item}</span>
-          ))}
-        </div>
-      </div>
-
+      {/* Certificate Modal */}
       <CertificateModal
         isOpen={isModalOpen}
         onClose={() => setIsModalOpen(false)}
-        certificateContent={<img src="/path/to/certificate.jpg" alt="Certificate" />}
+        certificateContent={
+          <img src="/path/to/certificate.jpg" alt="Certificate" />
+          // Or dynamically generate from credential info if you wish
+        }
       />
     </div>
   );
