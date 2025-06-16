@@ -1,3 +1,5 @@
+ 
+
 'use client';
 
 import Navbar from '@/components/navbar';
@@ -5,7 +7,9 @@ import CredentialForm from '@/components/form/credential-form';
 import RecentActivity from '@/app/admin/recent-activity';
 import Dashboard from '@/app/admin/dashboard';
 import AddUserForm from '@/components/form/add-user-form';
-
+import { useAccount } from "wagmi";
+import { useRouter } from "next/navigation";
+import { useEffect, useState } from "react";
 
 import '@/styles/card.css';
 import '@/styles/text.css';
@@ -47,21 +51,51 @@ const activityData = [
 ];
 
 export default function Admin() {
+  const { address, isConnected } = useAccount();
+  const router = useRouter();
+  const [checkingAuth, setCheckingAuth] = useState(true);
+
+  useEffect(() => {
+    // 1. If not connected, redirect to landing
+    if (!isConnected || !address) {
+      router.replace('/');
+      return;
+    }
+    // 2. Check if registered as admin
+    fetch(`http://localhost:3001/users/get-role?walletAddress=${address}`)
+      .then(res => res.json())
+      .then(data => {
+        if (!data.role || data.role !== 'admin') {
+          router.replace('/'); // Not registered as admin
+        } else {
+          setCheckingAuth(false); // OK!
+        }
+      })
+      .catch(() => {
+        router.replace('/'); // On error, redirect for safety
+      });
+  }, [isConnected, address, router]);
+
+  if (checkingAuth) {
+    return (
+      <>
+        <Navbar />
+        <div style={{ marginTop: 64, textAlign: "center" }}>Checking access...</div>
+      </>
+    );
+  }
+
   return (
     <div>
       <Navbar />
       <div className="screen-container">
         <h1 className="page-title">Admin Dashboard</h1>
-        
         {/* Dashboard Stats Component */}
         <Dashboard />
-
         {/* Issue Credential Form Component */}
         <CredentialForm />
-
         {/* Add User Form for Admins */}
         <AddUserForm />
-        
         {/* Recent Activity */}
         <RecentActivity activityData={activityData} />
       </div>

@@ -2,7 +2,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { createClient, gql } from "urql";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { cacheExchange, fetchExchange } from "@urql/core";
@@ -33,6 +33,23 @@ const CREDENTIAL_QUERY = gql`
   }
 `;
 
+const CREDENTIAL_BY_TOKENID_QUERY = gql`
+  query CredentialByTokenId($tokenId: BigInt!) {
+    credentials(where: { tokenId: $tokenId }) {
+      credentialCode
+      credentialType
+      credentialDetails
+      firstName
+      lastName
+      issueDate
+      issuer
+      program
+      tokenId
+      owner
+    }
+  }
+`;
+
 const TRANSFER_QUERY = gql`
   query TransferByTokenId($tokenId: BigInt!) {
     transfers(where: { tokenId: $tokenId }, orderBy: blockNumber, orderDirection: asc, first: 1) {
@@ -48,9 +65,10 @@ const TRANSFER_QUERY = gql`
 interface VerificationProps {
   setCredential: (cred: any) => void;
   setTransfer: (transfer: any) => void;
+  tokenIdFromUrl?: string | null;
 }
 
-export default function Verification({ setCredential, setTransfer }: VerificationProps) {
+export default function Verification({ setCredential, setTransfer, tokenIdFromUrl }: VerificationProps) {
   const [credentialCode, setCredentialCode] = useState("");
   const [verificationStatus, setVerificationStatus] = useState<"idle" | "loading" | "verified" | "invalid">("idle");
   const [error, setError] = useState<string | null>(null);
@@ -58,13 +76,21 @@ export default function Verification({ setCredential, setTransfer }: Verificatio
   // For QR UI (just for looks, actual QR extraction not implemented)
   const [qrImage, setQrImage] = useState<string | null>(null);
 
+  // Auto-verify if tokenId is in the URL
+  useEffect(() => {
+    if (tokenIdFromUrl) {
+      handleVerifyByTokenId(tokenIdFromUrl);
+    }
+    // eslint-disable-next-line
+  }, [tokenIdFromUrl]);
+
+  // Handler: verify by credentialCode
   const handleVerify = async () => {
     setVerificationStatus("loading");
     setError(null);
     setCredential(null);
     setTransfer(null);
 
-    // 1. Query credential by credentialCode
     const { data } = await client.query(CREDENTIAL_QUERY, { credentialCode }).toPromise();
     const cred = data?.credentials?.[0];
 
@@ -76,8 +102,33 @@ export default function Verification({ setCredential, setTransfer }: Verificatio
 
     setCredential(cred);
 
-    // 2. Query transfer info by tokenId
+    // Query transfer info by tokenId
     const { data: tData } = await client.query(TRANSFER_QUERY, { tokenId: cred.tokenId }).toPromise();
+    const transfer = tData?.transfers?.[0] || null;
+    setTransfer(transfer);
+
+    setVerificationStatus("verified");
+  };
+
+  // Handler: verify by tokenId (from URL)
+  const handleVerifyByTokenId = async (tokenId: string) => {
+    setVerificationStatus("loading");
+    setError(null);
+    setCredential(null);
+    setTransfer(null);
+
+    const { data } = await client.query(CREDENTIAL_BY_TOKENID_QUERY, { tokenId }).toPromise();
+    const cred = data?.credentials?.[0];
+
+    if (!cred) {
+      setVerificationStatus("invalid");
+      setError("Credential not found.");
+      return;
+    }
+    setCredential(cred);
+
+    // Query transfer info by tokenId
+    const { data: tData } = await client.query(TRANSFER_QUERY, { tokenId }).toPromise();
     const transfer = tData?.transfers?.[0] || null;
     setTransfer(transfer);
 

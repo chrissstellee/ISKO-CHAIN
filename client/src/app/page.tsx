@@ -28,9 +28,9 @@ export default function LandingPage() {
             router.push('/student');
           } else if (data.role === 'admin') {
             router.push('/admin');
-          } else if (data.role === 'employer') {
-            router.push('/verifier');
           }
+          // REMOVE: else if (data.role === 'employer') { router.push('/verifier'); }
+          // No auto-redirect to verifier!
         })
         .catch(() => setCheckingRole(false));
     }
@@ -49,7 +49,7 @@ export default function LandingPage() {
 
   return (
     <div className="landing-container">
-      <div className="landing-bar" /> 
+      <div className="landing-bar" />
 
       <div className="landing-card">
         <Image
@@ -69,9 +69,29 @@ export default function LandingPage() {
 
         {checkingRole && <div style={{ marginTop: 12 }}>Checking user role...</div>}
         {showRegistration && <RegistrationModal />}
+
+        {/* PUBLIC verifier access button */}
+        <a
+          href="/verifier"
+          className="public-verifier-btn"
+          style={{
+            display: 'inline-block',
+            marginTop: 28,
+            background: '#b71c1c',
+            color: 'white',
+            fontWeight: 600,
+            fontSize: 16,
+            borderRadius: 12,
+            padding: '12px 32px',
+            textDecoration: 'none',
+            boxShadow: '0 4px 24px rgba(0,0,0,0.10)'
+          }}
+        >
+          Verify a Credential (Public)
+        </a>
       </div>
 
-      <div className="landing-bar" /> 
+      <div className="landing-bar" />
     </div>
   );
 }

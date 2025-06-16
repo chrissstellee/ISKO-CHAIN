@@ -1,15 +1,14 @@
-/* eslint-disable @typescript-eslint/no-unused-vars */
+ 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 /* eslint-disable @next/next/no-img-element */
 "use client";
 
-import { useEffect, useState } from 'react';
+import React, { useState } from 'react';
 import CertificateModal from "@/components/modal/certificate-modal";
 import "@/styles/verifier.css";
 import "@/styles/card.css";
 import "@/styles/text.css";
 import "@/styles/button.css";
-import React from 'react';
 
 interface Props {
   credential: any | null;
@@ -17,7 +16,7 @@ interface Props {
 }
 
 export default function CredentialDetails({ credential, transfer }: Props) {
-  const [isModalOpen, setIsModalOpen] = React.useState(false);
+  const [isModalOpen, setIsModalOpen] = useState(false);
 
   if (!credential) {
     return (
