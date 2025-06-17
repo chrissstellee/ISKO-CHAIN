@@ -1,18 +1,17 @@
 // components/certificates/DiplomaTemplate.tsx
-
-// import VerifiedSeal from "@/components/certificates/VerifiedSeal";
+import Image from "next/image";
 
 export default function DiplomaTemplate({
   credential,
 }: {
-    credential: {
+  credential: {
     credentialDetails: string;
     credentialType: string;
     studentId: string;
     issueDate: string;
     firstName: string;
     lastName: string;
-      credentialCode: string;
+    credentialCode: string;
     // Add any other meta fields here!
   };
 }) {
@@ -28,11 +27,29 @@ export default function DiplomaTemplate({
         boxShadow: "0 8px 32px #0002",
         fontFamily: "'Georgia', serif",
         position: "relative",
+        overflow: "hidden",
       }}
     >
-      {/* <div style={{ position: "absolute", top: 24, right: 24 }}>
-        <VerifiedSeal />
-      </div> */}
+      <Image
+        src="/pup_holographic_seal.gif"
+        alt="PUP Holographic Seal"
+        width={125}
+        height={125}
+        style={{
+          position: "absolute",
+          bottom: 32,
+          left: 32,
+          opacity: 0.88,
+          pointerEvents: "none",
+          zIndex: 2,
+          borderRadius: "50%",
+          boxShadow: "0 2px 18px #bfa14e55",
+          background: "#fffdf3",
+        }}
+        draggable={false}
+        priority
+      />
+
       <h2
         style={{
           fontFamily: "'Georgia', serif",

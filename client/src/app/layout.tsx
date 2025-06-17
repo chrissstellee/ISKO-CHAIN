@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "@/styles/globals.css";
 import "remixicon/fonts/remixicon.css";
-import Providers from '@/lib/providers'; // 👈 Import the wrapper you just created
+import Providers from '@/lib/providers'; 
 
 const geistSans = Geist({
   variable: "--font-geist-sans",

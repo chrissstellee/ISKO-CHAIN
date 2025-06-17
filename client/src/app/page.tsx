@@ -1,6 +1,7 @@
 'use client';
 
 import Image from 'next/image';
+import Link from "next/link";
 import '@/styles/landing-style.css';
 import { ConnectButton } from "@rainbow-me/rainbowkit";
 import { useEffect, useState } from "react";
@@ -29,8 +30,7 @@ export default function LandingPage() {
           } else if (data.role === 'admin') {
             router.push('/admin');
           }
-          // REMOVE: else if (data.role === 'employer') { router.push('/verifier'); }
-          // No auto-redirect to verifier!
+          // No auto-redirect to verifier; verifier is always public
         })
         .catch(() => setCheckingRole(false));
     }
@@ -74,21 +74,23 @@ export default function LandingPage() {
         <a
           href="/verifier"
           className="public-verifier-btn"
-          style={{
-            display: 'inline-block',
-            marginTop: 28,
-            background: '#b71c1c',
-            color: 'white',
-            fontWeight: 600,
-            fontSize: 16,
-            borderRadius: 12,
-            padding: '12px 32px',
-            textDecoration: 'none',
-            boxShadow: '0 4px 24px rgba(0,0,0,0.10)'
-          }}
         >
           Verify a Credential (Public)
         </a>
+
+        {/* Terms & Conditions link */}
+        <div style={{ marginTop: 28, textAlign: 'center' }}>
+          <Link href="/terms">
+            <span style={{
+              color: "#888",
+              textDecoration: "underline",
+              fontSize: 13,
+              cursor: "pointer"
+            }}>
+              Terms & Conditions
+            </span>
+          </Link>
+        </div>
       </div>
 
       <div className="landing-bar" />

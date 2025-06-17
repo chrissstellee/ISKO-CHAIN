@@ -69,7 +69,7 @@ export default function AddUserForm() {
   };
 
   return (
-    <div className="card" style={{ maxWidth: 400, margin: "24px auto" }}>
+    <div className="card">
       <h2 className="card-title" style={{ marginBottom: 12 }}>Add User</h2>
       <form
         onSubmit={handleAddUser}
@@ -260,7 +260,6 @@ export default function AddUserForm() {
           >
             <option value="student">Student</option>
             <option value="admin">Admin</option>
-            <option value="employer">Employer</option>
           </select>
         </label>
         
