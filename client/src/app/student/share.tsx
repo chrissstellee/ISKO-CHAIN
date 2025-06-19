@@ -1,6 +1,7 @@
 "use client"
 import React, { useState } from 'react';
 import QRCodeModal from '@/components/modal/student-qr';
+import MySwal from "@/lib/swal"; // ← Add this import
 
 type Credential = {
   tokenId: string;
@@ -19,7 +20,7 @@ export default function ShareCredentials({ credentials, loading }: ShareCredenti
   const [isQRModalOpen, setIsQRModalOpen] = useState(false);
   const [selectedTokenId, setSelectedTokenId] = useState("");
 
-  // Only show credentials with status "Issued"
+  // Only show credentials with status "active"
   const activeCredentials = credentials.filter(
     (c) => c.status === "active"
   );
@@ -29,6 +30,22 @@ export default function ShareCredentials({ credentials, loading }: ShareCredenti
   const shareLink = selectedCredential
     ? `http://192.168.100.199:3000/verifier?tokenId=${selectedCredential.tokenId}`
     : "";
+
+  // --- Suite Alert implementation for "copy link" ---
+  async function handleCopyLink() {
+    if (shareLink) {
+      await navigator.clipboard.writeText(shareLink);
+      await MySwal.fire({
+        icon: "success",
+        title: "Link Copied!",
+        text: "The sharing link has been copied to your clipboard.",
+        confirmButtonColor: "#b71c1c",
+        timer: 1800,
+        timerProgressBar: true,
+        showConfirmButton: false,
+      });
+    }
+  }
 
   return (
     <>
@@ -65,12 +82,7 @@ export default function ShareCredentials({ credentials, loading }: ShareCredenti
           <button
             className="share-btn"
             disabled={!selectedTokenId}
-            onClick={() => {
-              if (shareLink) {
-                navigator.clipboard.writeText(shareLink);
-                alert("Sharing link copied to clipboard!");
-              }
-            }}
+            onClick={handleCopyLink}
           >
             Generate Sharing Link
           </button>

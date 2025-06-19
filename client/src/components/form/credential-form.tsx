@@ -6,24 +6,52 @@ import { useState, ChangeEvent, useEffect, useRef } from "react";
 import { useAccount, useWalletClient } from "wagmi";
 import { ethers } from "ethers";
 import IskoChainCredentialABI from "@/lib/IskoChainCredential.json";
-import { createClient, gql } from 'urql';
+import { createClient } from "urql";
 import { cacheExchange, fetchExchange } from "@urql/core";
-import '@/styles/card.css';
-import '@/styles/text.css';
-import '@/styles/button.css';
-import '@/styles/admin.css';
-import '@/styles/inputs.css';
-import '@/styles/table.css';
-import '@/styles/chip.css';
+import MySwal from "@/lib/swal";
+import "@/styles/card.css";
+import "@/styles/text.css";
+import "@/styles/button.css";
+import "@/styles/admin.css";
+import "@/styles/inputs.css";
+import "@/styles/table.css";
+import "@/styles/chip.css";
 
 const CONTRACT_ADDRESS = process.env.NEXT_PUBLIC_DEPLOYED_CONTRACT_ADDRESS;
-
-// --- Poll subgraph for newly issued credential ---
 const SUBGRAPH_URL = "https://api.studio.thegraph.com/query/113934/isko-chain/version/latest";
 const client = createClient({
   url: SUBGRAPH_URL,
   exchanges: [cacheExchange, fetchExchange],
 });
+
+// Check subgraph for existing active degree certificate for this student
+async function hasActiveDegreeCertificate(studentId: string): Promise<boolean> {
+  const query = `
+    query($studentId: String!) {
+      credentials(
+        where: {
+          studentId: $studentId
+          credentialType: "Degree Certificate"
+          status: "active"
+        }
+      ) {
+        id
+      }
+    }
+  `;
+  try {
+    const res = await fetch(SUBGRAPH_URL, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ query, variables: { studentId } }),
+    });
+    const data = await res.json();
+    return data.data && data.data.credentials && data.data.credentials.length > 0;
+  } catch {
+    // If subgraph fails, let the contract handle the rule
+    return false;
+  }
+}
 
 async function waitForSubgraphCredential(credentialCode: string, maxWaitMs = 10000): Promise<boolean> {
   const query = `
@@ -34,7 +62,6 @@ async function waitForSubgraphCredential(credentialCode: string, maxWaitMs = 100
     }
   `;
   const start = Date.now();
-  let found = false;
   while (Date.now() - start < maxWaitMs) {
     const res = await fetch(SUBGRAPH_URL, {
       method: "POST",
@@ -49,8 +76,7 @@ async function waitForSubgraphCredential(credentialCode: string, maxWaitMs = 100
     } catch {}
     await new Promise(res => setTimeout(res, 1500));
   }
-
-  // *** FINAL CHECK after loop just in case! ***
+  // Final check
   const res = await fetch(SUBGRAPH_URL, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
@@ -62,7 +88,6 @@ async function waitForSubgraphCredential(credentialCode: string, maxWaitMs = 100
       return true;
     }
   } catch {}
-
   return false;
 }
 
@@ -83,11 +108,22 @@ interface CredentialData {
 
 interface Props {
   onSubmit?: (data: CredentialData) => void;
-  onIssueSuccess?: () => void; // New!
+  onIssueSuccess?: () => void;
+}
+
+function extractRevertReason(err: any) {
+  if (err?.reason) return err.reason;
+  if (err?.error?.message) return err.error.message;
+  if (err?.data?.message) return err.data.message;
+  if (err?.message) {
+    if (err.message.includes("Not an admin")) return "You are not an admin.";
+    if (err.message.includes("already has an active Degree Certificate")) return "Student already has an active Degree Certificate.";
+    return err.message;
+  }
+  return "Unknown blockchain error.";
 }
 
 export default function IssueCredentialsForm({ onSubmit, onIssueSuccess }: Props) {
-  // ...all your other state
   const [credentialType, setCredentialType] = useState("");
   const [studentId, setStudentId] = useState("");
   const [credentialDetails, setCredentialDetails] = useState("");
@@ -110,16 +146,13 @@ export default function IssueCredentialsForm({ onSubmit, onIssueSuccess }: Props
   const { address, isConnected } = useAccount();
   const { data: walletClient } = useWalletClient();
 
-  // Set issueDate to today on form open/reset
   useEffect(() => {
     setIssueDate(getTodayDateString());
   }, []);
 
-  // Fetch admin email on mount or address change
   useEffect(() => {
     if (!address) return;
     setLoadingIssuer(true);
-
     const message = "Authenticate to ISKO-CHAIN";
     async function fetchIssuer() {
       if (!window.ethereum) {
@@ -186,7 +219,6 @@ export default function IssueCredentialsForm({ onSubmit, onIssueSuccess }: Props
     };
   }, [studentId]);
 
-  // Always set issueDate to today on form reset
   const handleRefresh = () => {
     setCredentialType('');
     setStudentId('');
@@ -208,7 +240,6 @@ export default function IssueCredentialsForm({ onSubmit, onIssueSuccess }: Props
     if (!credentialType) newErrors.credentialType = "Credential type is required.";
     if (!studentId || !/^[a-zA-Z0-9\-]+$/.test(studentId)) newErrors.studentId = "Valid alphanumeric student ID is required.";
     if (!credentialDetails) newErrors.credentialDetails = "Credential title is required.";
-    // Issue date is always set and valid by default!
     if (!issuer) newErrors.issuer = "Issuer email not loaded. Please try again.";
     if (!firstName) newErrors.firstName = "First name required (check student ID).";
     if (!lastName) newErrors.lastName = "Last name required (check student ID).";
@@ -218,8 +249,25 @@ export default function IssueCredentialsForm({ onSubmit, onIssueSuccess }: Props
     return Object.keys(newErrors).length === 0;
   };
 
+  // --- MAIN SUBMIT WITH DEGREE CERTIFICATE CHECK ---
   const handleSubmit = async () => {
     if (!validateForm()) return;
+
+    // Only block if "Degree Certificate" and there's an active one already
+    if (credentialType === "Degree Certificate") {
+      setStatus("Checking if student already has an active Degree Certificate...");
+      const hasActive = await hasActiveDegreeCertificate(studentId);
+      if (hasActive) {
+        await MySwal.fire({
+          icon: "warning",
+          title: "Active Degree Detected",
+          text: "Student already has an active Degree Certificate. Revoke the previous credential before issuing a new one.",
+          confirmButtonColor: "#b71c1c",
+        });
+        setStatus("");
+        return;
+      }
+    }
 
     setStatus("Uploading credential metadata...");
     setCredentialCode("");
@@ -248,11 +296,23 @@ export default function IssueCredentialsForm({ onSubmit, onIssueSuccess }: Props
       const { tokenURI, walletAddress, error, credentialCode: generatedCode } = await res.json();
 
       if (error) {
-        setStatus(error);
+        await MySwal.fire({
+          icon: "error",
+          title: "Issue Failed",
+          text: error,
+          confirmButtonColor: "#b71c1c",
+        });
+        setStatus("");
         return;
       }
       if (!tokenURI || !walletAddress || !generatedCode) {
-        setStatus("No credential info returned from server.");
+        await MySwal.fire({
+          icon: "error",
+          title: "Issue Failed",
+          text: "Failed to issue credential. Please try again.",
+          confirmButtonColor: "#b71c1c",
+        });
+        setStatus("");
         return;
       }
 
@@ -260,17 +320,33 @@ export default function IssueCredentialsForm({ onSubmit, onIssueSuccess }: Props
 
       setStatus("Minting NFT on blockchain...");
       if (!walletClient || !isConnected) {
-        setStatus("Wallet not connected.");
+        await MySwal.fire({
+          icon: "error",
+          title: "Wallet Not Connected",
+          text: "Please connect your wallet.",
+          confirmButtonColor: "#b71c1c",
+        });    
+        setStatus("");
         return;
       }
-
       if (!window.ethereum) {
-        setStatus("No wallet extension found.");
+        await MySwal.fire({
+          icon: "error",
+          title: "No Wallet Extension",
+          text: "No wallet extension found.",
+          confirmButtonColor: "#b71c1c",
+        });
+        setStatus("");
         return;
       }
-
       if (!CONTRACT_ADDRESS) {
-        setStatus("Smart contract address is not configured.");
+        await MySwal.fire({
+          icon: "error",
+          title: "Missing Contract",
+          text: "Smart contract address is not configured.",
+          confirmButtonColor: "#b71c1c",
+        });
+        setStatus("");
         return;
       }
 
@@ -278,44 +354,86 @@ export default function IssueCredentialsForm({ onSubmit, onIssueSuccess }: Props
       const signer = await ethersProvider.getSigner();
       const contract = new ethers.Contract(CONTRACT_ADDRESS, IskoChainCredentialABI, signer);
 
-      // Mint to student walletAddress (not studentId)
-      const tx = await contract.issueCredential(walletAddress, tokenURI);
-      await tx.wait();
+      try {
+        // Mint to student walletAddress (not studentId)
+        const tx = await contract.issueCredential(walletAddress, tokenURI, studentId, credentialType);
+        await tx.wait();
 
-      setStatus("Waiting for The Graph to index the new credential...");
+        setStatus("Waiting for The Graph to index the new credential...");
 
-      // --- POLLING LOGIC ---
-      const found = await waitForSubgraphCredential(generatedCode);
+        // --- POLLING LOGIC ---
+        const found = await waitForSubgraphCredential(generatedCode);
 
-      if (found) {
-        setStatus("✅ Credential issued and indexed!");
-        if (onSubmit) {
-          onSubmit({
-            credentialType,
-            studentId,
-            credentialDetails,
-            issueDate,
-            issuer,
-            metadata,
-            firstName,
-            middleName,
-            lastName,
-            yearLevel: yearLevel === "" ? undefined : yearLevel,
-            programName,
-            credentialCode: generatedCode,
+        if (found) {
+          await MySwal.fire({
+            icon: "success",
+            title: "Credential Issued",
+            text: "Credential issued and indexed!",
+            confirmButtonColor: "#b71c1c",
           });
+          setStatus("");
+          if (onSubmit) {
+            onSubmit({
+              credentialType,
+              studentId,
+              credentialDetails,
+              issueDate,
+              issuer,
+              metadata,
+              firstName,
+              middleName,
+              lastName,
+              yearLevel: yearLevel === "" ? undefined : yearLevel,
+              programName,
+              credentialCode: generatedCode,
+            });
+          }
+          if (onIssueSuccess) {
+            onIssueSuccess();
+          }
+          handleRefresh();
+        } else {
+          await MySwal.fire({
+            icon: "warning",
+            title: "Subgraph Delay",
+            text: "Credential issued, but subgraph did not index it in time. It will appear soon.",
+            confirmButtonColor: "#b71c1c",
+          });
+          setStatus("");
+          if (onIssueSuccess) {
+            onIssueSuccess();
+          }
+          handleRefresh();
         }
-        if (onIssueSuccess) {
-          onIssueSuccess();
+      } catch (err: any) {
+        // --- Blockchain Mint Revert/Error Handling ---
+        let reason = extractRevertReason(err);
+        let userMessage = "Blockchain mint failed.";
+        if (reason === "Not an admin" || reason.includes("Not an admin")) {
+          userMessage = "Blockchain mint failed. You are not an admin. Please login with an admin wallet.";
+        } else if (reason.includes("already has an active Degree Certificate")) {
+          userMessage = "Blockchain mint failed. Student already has an active Degree Certificate. Revoke the previous credential before issuing a new one.";
+        } else if (reason !== "Unknown blockchain error.") {
+          userMessage += " Reason: " + reason;
         }
-      } else {
-        setStatus("⚠️ Credential issued, but subgraph did not index it in time. It will appear soon.");
-        if (onIssueSuccess) {
-          onIssueSuccess();
-        }
+        await MySwal.fire({
+          icon: "error",
+          title: "Mint Failed",
+          text: userMessage,
+          confirmButtonColor: "#b71c1c",
+        });
+        setStatus("");
+        console.error(err);
+        return;
       }
     } catch (err: any) {
-      setStatus("Blockchain mint failed. " + (err?.message || ""));
+      await MySwal.fire({
+        icon: "error",
+        title: "Server Error",
+        text: "Failed to upload credential metadata. " + (err?.message || ""),
+        confirmButtonColor: "#b71c1c",
+      });
+      setStatus("");
       console.error(err);
     }
   };
@@ -335,11 +453,10 @@ export default function IssueCredentialsForm({ onSubmit, onIssueSuccess }: Props
           onChange={(e: ChangeEvent<HTMLSelectElement>) => setCredentialType(e.target.value)}
         >
           <option value="">-- Select Type --</option>
-          <option>Degree Completion</option>
+          <option>Degree Certificate</option>
           <option>Course Completion</option>
           <option>Honor/Award</option>
           <option>Workshop Completion</option>
-          {/* <option>Transcript</option> */}
         </select>
         {errors.credentialType && <span className="input-error">{errors.credentialType}</span>}
       </div>

@@ -1,25 +1,23 @@
-import { ipfs, json } from "@graphprotocol/graph-ts"
 import {
   Approval as ApprovalEvent,
   ApprovalForAll as ApprovalForAllEvent,
   BatchMetadataUpdate as BatchMetadataUpdateEvent,
   IskoChainCredential,
   MetadataUpdate as MetadataUpdateEvent,
-  // OwnershipTransferred as OwnershipTransferredEvent,
-  Transfer as TransferEvent,
+  CredentialIssued as CredentialIssuedEvent,
   CredentialRevoked as CredentialRevokedEvent,
-  CredentialReissued as CredentialReissuedEvent
+  CredentialReissued as CredentialReissuedEvent,
+  Transfer as TransferEvent
 } from "../generated/IskoChainCredential/IskoChainCredential"
 import {
   Approval,
   ApprovalForAll,
   BatchMetadataUpdate,
   MetadataUpdate,
-  // OwnershipTransferred,
   Transfer,
-  Credential // <-- Add this
+  Credential
 } from "../generated/schema"
-import { JSONValueKind } from "@graphprotocol/graph-ts";
+import { ipfs, json, JSONValueKind } from "@graphprotocol/graph-ts";
 
 export function handleApproval(event: ApprovalEvent): void {
   let entity = new Approval(
@@ -80,21 +78,22 @@ export function handleMetadataUpdate(event: MetadataUpdateEvent): void {
   entity.save()
 }
 
-// export function handleOwnershipTransferred(
-//   event: OwnershipTransferredEvent
-// ): void {
-//   let entity = new OwnershipTransferred(
-//     event.transaction.hash.concatI32(event.logIndex.toI32())
-//   )
-//   entity.previousOwner = event.params.previousOwner
-//   entity.newOwner = event.params.newOwner
+export function handleCredentialIssued(event: CredentialIssuedEvent): void {
+  let id = event.params.tokenId.toString();
+  let credential = new Credential(id);
 
-//   entity.blockNumber = event.block.number
-//   entity.blockTimestamp = event.block.timestamp
-//   entity.transactionHash = event.transaction.hash
-
-//   entity.save()
-// }
+  credential.tokenId = event.params.tokenId;
+  credential.tokenURI = event.params.tokenURI;
+  credential.studentId = event.params.studentId;
+  credential.credentialType = event.params.credentialType;
+  credential.owner = event.params.to;
+  credential.createdAt = event.block.timestamp;
+  credential.updatedAt = event.block.timestamp;
+  credential.status = "active";
+  credential.revocationReason = "";
+  credential.replacedByTokenId = "";
+  credential.save();
+}
 
 export function handleCredentialRevoked(event: CredentialRevokedEvent): void {
   let id = event.params.tokenId.toString();
@@ -103,7 +102,6 @@ export function handleCredentialRevoked(event: CredentialRevokedEvent): void {
     credential.status = "revoked";
     credential.revocationReason = event.params.reason;
     credential.updatedAt = event.block.timestamp;
-    // Save the admin who performed the action
     credential.admin = event.params.admin;
     credential.save();
   }

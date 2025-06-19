@@ -5,9 +5,9 @@ export declare class UserService {
     bindWallet(walletAddress: string, studentId?: string, role?: string, email?: string, firstName?: string, middleName?: string, lastName?: string, yearLevel?: number, programId?: number): Promise<{
         id: number;
         createdAt: Date;
+        studentId: string | null;
         role: string;
         walletAddress: string;
-        studentId: string | null;
         email: string | null;
         firstName: string | null;
         middleName: string | null;
@@ -44,9 +44,9 @@ export declare class UserService {
     findByWallet(walletAddress: string): Promise<{
         id: number;
         createdAt: Date;
+        studentId: string | null;
         role: string;
         walletAddress: string;
-        studentId: string | null;
         email: string | null;
         firstName: string | null;
         middleName: string | null;

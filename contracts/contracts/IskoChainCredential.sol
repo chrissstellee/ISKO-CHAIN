@@ -6,7 +6,6 @@ import "@openzeppelin/contracts/token/ERC721/extensions/ERC721URIStorage.sol";
 
 contract IskoChainCredential is ERC721URIStorage, AccessControl {
     bytes32 public constant ADMIN_ROLE = keccak256("ADMIN_ROLE");
-    // deployer gets DEFAULT_ADMIN_ROLE, can grant/revoke ADMIN_ROLEs
 
     uint256 public nextTokenId;
 
@@ -15,14 +14,19 @@ contract IskoChainCredential is ERC721URIStorage, AccessControl {
     mapping(uint256 => string) public revocationReason;
     mapping(uint256 => uint256) public replacedByTokenId;
 
-    event CredentialIssued(address indexed to, uint256 indexed tokenId, string tokenURI);
-    event CredentialRevoked(uint256 indexed tokenId, string reason, address indexed admin);
-    event CredentialReissued(uint256 indexed oldTokenId, uint256 indexed newTokenId, address indexed admin);
+    // Enforce 1 active Degree Certificate per studentId
+    mapping(string => uint256) public activeDegreeCertificate;
+
+    // Store studentId and credentialType for each token
+    mapping(uint256 => string) public tokenStudentId;
+    mapping(uint256 => string) public tokenCredentialType;
+
+    event CredentialIssued(address indexed to, uint256 indexed tokenId, string tokenURI, string studentId, string credentialType);
+    event CredentialRevoked(uint256 indexed tokenId, string reason, address indexed admin, string studentId, string credentialType);
+    event CredentialReissued(uint256 indexed oldTokenId, uint256 indexed newTokenId, address indexed admin, string studentId);
 
     constructor(address[] memory initialAdmins) ERC721("IskoChain Credential", "ISKOCRED") {
-        // Deployer gets the DEFAULT_ADMIN_ROLE (super-admin)
         _grantRole(DEFAULT_ADMIN_ROLE, msg.sender);
-        // Grant ADMIN_ROLE to initial admins
         for (uint i = 0; i < initialAdmins.length; i++) {
             _grantRole(ADMIN_ROLE, initialAdmins[i]);
         }
@@ -33,33 +37,73 @@ contract IskoChainCredential is ERC721URIStorage, AccessControl {
         _;
     }
 
-    function issueCredential(address to, string memory tokenURI) public onlyAdmin returns (uint256) {
+    /// @notice Issue a credential NFT to a student.
+    /// @dev Only one active Degree Certificate per studentId is allowed.
+    function issueCredential(
+        address to,
+        string memory tokenURI,
+        string memory studentId,
+        string memory credentialType
+    ) public onlyAdmin returns (uint256) {
+        if (_isDegreeCertificate(credentialType)) {
+            uint256 existingTokenId = activeDegreeCertificate[studentId];
+            // Block if existing token is present and not revoked
+            if (existingTokenId != 0 && !isRevoked[existingTokenId]) {
+                revert("Student already has an active Degree Certificate");
+            }
+        }
         uint256 tokenId = nextTokenId;
         _safeMint(to, tokenId);
         _setTokenURI(tokenId, tokenURI);
+        tokenStudentId[tokenId] = studentId;
+        tokenCredentialType[tokenId] = credentialType;
         nextTokenId++;
-        emit CredentialIssued(to, tokenId, tokenURI);
+
+        if (_isDegreeCertificate(credentialType)) {
+            activeDegreeCertificate[studentId] = tokenId;
+        }
+
+        emit CredentialIssued(to, tokenId, tokenURI, studentId, credentialType);
         return tokenId;
     }
 
-    function revokeCredential(uint256 tokenId, string memory reason) public onlyAdmin {
+    /// @notice Revoke a credential NFT.
+    function revokeCredential(
+        uint256 tokenId,
+        string memory reason
+    ) public onlyAdmin {
         ownerOf(tokenId); // reverts if not exists
         require(!isRevoked[tokenId], "Already revoked");
         isRevoked[tokenId] = true;
         revocationReason[tokenId] = reason;
-        emit CredentialRevoked(tokenId, reason, msg.sender);
+
+        // If Degree Certificate, clear student mapping if needed
+        string memory studentId = tokenStudentId[tokenId];
+        string memory credentialType = tokenCredentialType[tokenId];
+        if (_isDegreeCertificate(credentialType) && activeDegreeCertificate[studentId] == tokenId) {
+            activeDegreeCertificate[studentId] = 0;
+        }
+
+        emit CredentialRevoked(tokenId, reason, msg.sender, studentId, credentialType);
     }
 
+    /// @notice Reissue a credential (revoke old, mint new with same studentId/type).
     function reissueCredential(
         uint256 oldTokenId,
         address to,
         string memory newTokenURI,
         string memory reason
     ) public onlyAdmin {
+        // Get info from old token
+        string memory studentId = tokenStudentId[oldTokenId];
+        string memory credentialType = tokenCredentialType[oldTokenId];
+
+        // Revoke old
         revokeCredential(oldTokenId, reason);
-        uint256 newTokenId = issueCredential(to, newTokenURI);
+        // Mint new
+        uint256 newTokenId = issueCredential(to, newTokenURI, studentId, credentialType);
         replacedByTokenId[oldTokenId] = newTokenId;
-        emit CredentialReissued(oldTokenId, newTokenId, msg.sender);
+        emit CredentialReissued(oldTokenId, newTokenId, msg.sender, studentId);
     }
 
     // --- Admin management ---
@@ -71,7 +115,11 @@ contract IskoChainCredential is ERC721URIStorage, AccessControl {
         _revokeRole(ADMIN_ROLE, account);
     }
 
-    // Add this override at the end:
+    function _isDegreeCertificate(string memory credentialType) internal pure returns (bool) {
+        // Check for exact match (case-sensitive, should match frontend/backend spelling)
+        return (keccak256(bytes(credentialType)) == keccak256(bytes("Degree Certificate")));
+    }
+
     function supportsInterface(bytes4 interfaceId)
         public
         view

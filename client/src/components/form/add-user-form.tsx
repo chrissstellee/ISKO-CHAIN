@@ -1,5 +1,7 @@
+/* eslint-disable @typescript-eslint/no-unused-vars */
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import React, { useState, useEffect } from "react";
+import MySwal from "@/lib/swal";
 
 export default function AddUserForm() {
   const [walletAddress, setWalletAddress] = useState('');
@@ -34,31 +36,69 @@ export default function AddUserForm() {
       role,
     };
 
-    if (role === "student") {
-      payload.studentId = studentId;
-      payload.firstName = firstName;
-      payload.middleName = middleName || undefined;
-      payload.lastName = lastName;
-      payload.yearLevel = yearLevel ? Number(yearLevel) : undefined;
-      payload.programId = programId !== '' ? Number(programId) : undefined;
-      const res = await fetch('http://localhost:3001/users/bind-wallet', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload),
-      });
-      if (res.ok) setSuccess('Student added!');
-      else setSuccess('Failed to add student.');
-    }
+    try {
+      if (role === "student") {
+        payload.studentId = studentId;
+        payload.firstName = firstName;
+        payload.middleName = middleName || undefined;
+        payload.lastName = lastName;
+        payload.yearLevel = yearLevel ? Number(yearLevel) : undefined;
+        payload.programId = programId !== '' ? Number(programId) : undefined;
+        const res = await fetch('http://localhost:3001/users/bind-wallet', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload),
+        });
+        if (res.ok) {
+            await MySwal.fire({
+              icon: "success",
+              title: "Student Added",
+              text: "The student was successfully added!",
+              confirmButtonColor: "#b71c1c",
+            });
+        }
+        else {
+            const data = await res.json().catch(() => ({}));
+            await MySwal.fire({
+              icon: "error",
+              title: "Failed to Add Student",
+              text: data?.error || "An error occurred while adding the student.",
+              confirmButtonColor: "#b71c1c",
+            });
+          }
+        }
 
-    if (role === "admin") {
-      payload.email = email;
-      const res = await fetch('http://localhost:3001/users/add-admin', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ walletAddress, email }),
+      if (role === "admin") {
+        payload.email = email;
+        const res = await fetch('http://localhost:3001/users/add-admin', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ walletAddress, email }),
+        });
+          if (res.ok) {
+            await MySwal.fire({
+              icon: "success",
+              title: "Admin Added",
+              text: "The admin was successfully added!",
+              confirmButtonColor: "#b71c1c",
+            });
+          } else {
+            const data = await res.json().catch(() => ({}));
+            await MySwal.fire({
+              icon: "error",
+              title: "Failed to Add Admin",
+              text: data?.error || "An error occurred while adding the admin.",
+              confirmButtonColor: "#b71c1c",
+            });
+          }
+        }
+    } catch (err: any) {
+      await MySwal.fire({
+        icon: "error",
+        title: "Network Error",
+        text: err?.message || "A network error occurred.",
+        confirmButtonColor: "#b71c1c",
       });
-      if (res.ok) setSuccess('Admin added!');
-      else setSuccess('Failed to add admin.');
     }
 
     setLoading(false);
@@ -293,19 +333,6 @@ export default function AddUserForm() {
           {loading ? "Adding..." : "Add User"}
         </button>
       </form>
-      {success && (
-        <div
-          style={{
-            marginTop: 16,
-            textAlign: "center",
-            color: success.startsWith("✅") ? "#388e3c" : "#b71c1c",
-            fontWeight: 500,
-            fontSize: 15,
-          }}
-        >
-          {success}
-        </div>
-      )}
     </div>
   );
 }

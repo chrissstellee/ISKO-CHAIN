@@ -10,9 +10,9 @@ dataSources:
     name: IskoChainCredential
     network: base-sepolia
     source:
-      address: "0xaE5e27768045139e4C514c4FD7ECD1EC06B22f5a"
+      address: "0xD81fa9D278F8714348225153BAf1B82034CE0545"
       abi: IskoChainCredential
-      startBlock: 27238127
+      startBlock: 27288523
     mapping:
       kind: ethereum/events
       apiVersion: 0.0.9
@@ -24,22 +24,23 @@ dataSources:
         - MetadataUpdate
         - OwnershipTransferred
         - Transfer
+        - Credential
       abis:
         - name: IskoChainCredential
           file: ./abis/IskoChainCredential.json
       eventHandlers:
+        - event: CredentialIssued(indexed address,indexed uint256,string,string,string)
+          handler: handleCredentialIssued
+        - event: CredentialReissued(indexed uint256,indexed uint256,indexed address,string)
+          handler: handleCredentialReissued
+        - event: CredentialRevoked(indexed uint256,string,indexed address,string,string)
+          handler: handleCredentialRevoked
         - event: Approval(indexed address,indexed address,indexed uint256)
           handler: handleApproval
         - event: ApprovalForAll(indexed address,indexed address,bool)
           handler: handleApprovalForAll
         - event: BatchMetadataUpdate(uint256,uint256)
           handler: handleBatchMetadataUpdate
-        # - event: CredentialIssued(indexed address,indexed uint256,string)
-        #   handler: handleCredentialIssued # If implemented
-        - event: CredentialReissued(indexed uint256,indexed uint256,indexed address)
-          handler: handleCredentialReissued
-        - event: CredentialRevoked(indexed uint256,string,indexed address)
-          handler: handleCredentialRevoked
         - event: MetadataUpdate(uint256)
           handler: handleMetadataUpdate
         - event: Transfer(indexed address,indexed address,indexed uint256)

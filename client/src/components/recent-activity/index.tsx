@@ -5,8 +5,10 @@ import { ethers } from "ethers";
 import IskoChainCredentialABI from "@/lib/IskoChainCredential.json";
 import { PAGE_SIZE, useRecentActivity } from "./useRecentActivity";
 import ReissueModal from "./ReissueModal";
+import RevokeReasonModal from "./RevokeReasonModal";
 import { CredentialActivity, RecentActivityProps } from "./types";
 import BlockchainTableLoader from "@/components/ui/loading";
+import MySwal from "@/lib/swal"; // <-- SweetAlert2 instance
 
 const CONTRACT_ADDRESS = process.env.NEXT_PUBLIC_DEPLOYED_CONTRACT_ADDRESS as string;
 
@@ -62,6 +64,12 @@ export default function RecentActivity({ refreshCount, onAnyAction }: RecentActi
   const [form, setForm] = useState<Partial<CredentialActivity>>({});
   const [submitting, setSubmitting] = useState(false);
 
+  // For revoke modal
+  const [revokeModalOpen, setRevokeModalOpen] = useState(false);
+  const [revokeLoading, setRevokeLoading] = useState(false);
+  const [revokeReason, setRevokeReason] = useState("");
+  const [revokeCredential, setRevokeCredential] = useState<CredentialActivity | null>(null);
+
   const { rows, total, loading } = useRecentActivity(page, refreshCount, refresh);
 
   // --- Filtering logic for loaded page only ---
@@ -80,14 +88,26 @@ export default function RecentActivity({ refreshCount, onAnyAction }: RecentActi
     return matchFilter && matchSearch;
   });
 
-  // --- Revoke logic ---
-  async function handleRevoke(credential: CredentialActivity) {
-    const reason = prompt("Enter revocation reason:");
-    if (!reason) return;
+  // --- Revoke logic using Modal ---
+  function openRevokeModal(credential: CredentialActivity) {
+    setRevokeCredential(credential);
+    setRevokeReason("");
+    setRevokeModalOpen(true);
+  }
 
+  async function handleConfirmRevoke(e: FormEvent) {
+    e.preventDefault();
+    if (!revokeCredential || !revokeReason.trim()) return;
+    setRevokeLoading(true);
     try {
       if (!window.ethereum) {
-        alert("MetaMask is not installed!");
+        await MySwal.fire({
+          icon: "error",
+          title: "MetaMask Required",
+          text: "MetaMask is not installed!",
+          confirmButtonColor: "#b71c1c",
+        });
+        setRevokeLoading(false);
         return;
       }
       const provider = new ethers.BrowserProvider(window.ethereum as any);
@@ -95,25 +115,45 @@ export default function RecentActivity({ refreshCount, onAnyAction }: RecentActi
       const signer = await provider.getSigner();
       const contract = new ethers.Contract(CONTRACT_ADDRESS, IskoChainCredentialABI, signer);
 
-      const tx = await contract.revokeCredential(credential.tokenId, reason);
+      const tx = await contract.revokeCredential(revokeCredential.tokenId, revokeReason);
       await tx.wait();
 
       // Wait for subgraph to reflect
-      const found = await waitForSubgraphStatus(credential.tokenId, "revoked", 15000);
+      const found = await waitForSubgraphStatus(revokeCredential.tokenId, "revoked", 15000);
       if (found) {
-        alert("Credential revoked and subgraph updated!");
+        await MySwal.fire({
+          icon: "success",
+          title: "Credential Revoked",
+          text: "Credential revoked and subgraph updated!",
+          confirmButtonColor: "#b71c1c",
+        });
         setRefresh(x => x + 1);
-        onAnyAction?.(); // TRIGGER PARENT REFRESH
+        onAnyAction?.();
       } else {
-        alert("Revoked on-chain, but subgraph did not index in time. It will appear soon.");
+        await MySwal.fire({
+          icon: "warning",
+          title: "Subgraph Delay",
+          text: "Revoked on-chain, but subgraph did not index in time. It will appear soon.",
+          confirmButtonColor: "#b71c1c",
+        });
         setTimeout(() => {
           setRefresh(x => x + 1);
-          onAnyAction?.(); // TRIGGER PARENT REFRESH
+          onAnyAction?.();
         }, 2000);
       }
+      setRevokeModalOpen(false);
+      setRevokeLoading(false);
+      setRevokeCredential(null);
+      setRevokeReason("");
     } catch (e: any) {
-      alert("Revocation failed: " + (e?.reason || e?.message));
+      await MySwal.fire({
+        icon: "error",
+        title: "Revocation Failed",
+        text: e?.reason || e?.message || "Transaction failed.",
+        confirmButtonColor: "#b71c1c",
+      });
       console.error(e);
+      setRevokeLoading(false);
     }
   }
 
@@ -156,7 +196,12 @@ export default function RecentActivity({ refreshCount, onAnyAction }: RecentActi
       const { tokenURI, walletAddress } = await metaRes.json();
 
       if (!window.ethereum) {
-        alert("MetaMask is not installed!");
+        await MySwal.fire({
+          icon: "error",
+          title: "MetaMask Required",
+          text: "MetaMask is not installed!",
+          confirmButtonColor: "#b71c1c",
+        });
         setSubmitting(false);
         return;
       }
@@ -176,22 +221,37 @@ export default function RecentActivity({ refreshCount, onAnyAction }: RecentActi
       // Wait for subgraph to reflect
       const found = await waitForSubgraphStatus(modalCredential?.tokenId!, "revoked", 15000);
       if (found) {
-        alert("Credential reissued (revoked old) and subgraph updated!");
+        await MySwal.fire({
+          icon: "success",
+          title: "Credential Reissued",
+          text: "Credential reissued (revoked old) and subgraph updated!",
+          confirmButtonColor: "#b71c1c",
+        });
         setModalOpen(false);
         setModalCredential(null);
         setRefresh(x => x + 1);
         onAnyAction?.(); // TRIGGER PARENT REFRESH
       } else {
-        alert("Reissued on-chain, but subgraph did not index in time. It will appear soon.");
+        await MySwal.fire({
+          icon: "warning",
+          title: "Subgraph Delay",
+          text: "Reissued on-chain, but subgraph did not index in time. It will appear soon.",
+          confirmButtonColor: "#b71c1c",
+        });
         setModalOpen(false);
         setModalCredential(null);
         setTimeout(() => {
           setRefresh(x => x + 1);
-          onAnyAction?.(); // TRIGGER PARENT REFRESH
+          onAnyAction?.();
         }, 2000);
       }
     } catch (e: any) {
-      alert("Reissue failed: " + (e?.reason || e?.message));
+      await MySwal.fire({
+        icon: "error",
+        title: "Reissue Failed",
+        text: e?.reason || e?.message || "Transaction failed.",
+        confirmButtonColor: "#b71c1c",
+      });
       console.error(e);
     }
     setSubmitting(false);
@@ -223,7 +283,7 @@ export default function RecentActivity({ refreshCount, onAnyAction }: RecentActi
 
       {loading ? (
         <div className="py-8">
-            <BlockchainTableLoader size="md" message="Loading credential activities..." />
+          <BlockchainTableLoader size="md" message="Loading credential activities..." />
         </div>
       ) : (
         <>
@@ -254,7 +314,7 @@ export default function RecentActivity({ refreshCount, onAnyAction }: RecentActi
                         {/* Revoke */}
                         <button
                           title="Revoke"
-                          onClick={() => handleRevoke(activity)}
+                          onClick={() => openRevokeModal(activity)}
                           style={{
                             background: "none",
                             border: "none",
@@ -315,6 +375,21 @@ export default function RecentActivity({ refreshCount, onAnyAction }: RecentActi
           </div>
         </>
       )}
+
+      {/* Modal for Revoke Reason */}
+      <RevokeReasonModal
+        open={revokeModalOpen}
+        submitting={revokeLoading}
+        credential={revokeCredential}
+        reason={revokeReason}
+        setReason={setRevokeReason}
+        onClose={() => {
+          setRevokeModalOpen(false);
+          setRevokeCredential(null);
+          setRevokeReason("");
+        }}
+        onSubmit={handleConfirmRevoke}
+      />
 
       {/* Modal for Reissue */}
       <ReissueModal

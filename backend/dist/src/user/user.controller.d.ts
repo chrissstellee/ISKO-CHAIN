@@ -15,9 +15,9 @@ export declare class UserController {
     }): Promise<{
         id: number;
         createdAt: Date;
+        studentId: string | null;
         role: string;
         walletAddress: string;
-        studentId: string | null;
         email: string | null;
         firstName: string | null;
         middleName: string | null;
