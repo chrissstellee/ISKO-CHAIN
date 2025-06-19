@@ -7,4 +7,19 @@ export declare class CredentialController {
         tokenURI: string;
         walletAddress: string;
     }>;
+    revokeCredential(body: {
+        tokenId: number;
+        reason: string;
+    }): Promise<{
+        success: boolean;
+        txHash: any;
+        message: string;
+    }>;
+    reissueCredential(body: any): Promise<{
+        success: boolean;
+        txHash: any;
+        newTokenURI: string;
+        credentialCode: string;
+        message: string;
+    }>;
 }

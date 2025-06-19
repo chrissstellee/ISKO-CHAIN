@@ -1,15 +1,24 @@
-const {ethers} = require("hardhat");
+const { ethers } = require("hardhat");
 
 async function main() {
-    const [deployer] = await ethers.getSigners();
+  // Get multiple signers (add more if needed)
+  const [deployer] = await ethers.getSigners();
 
-    console.log("Deploying with:", deployer.address);
+  // Prepare initial admin addresses (can be just the deployer, or more)
+  // You can add more addresses as needed!
+  const initialAdmins = [deployer.address];
 
-    const IskoChainCredential = await ethers.getContractFactory("IskoChainCredential");
-    const contract = await IskoChainCredential.deploy();
+  console.log("Deploying with deployer:", deployer.address);
+  console.log("Initial admins:", initialAdmins);
 
-    // In ethers v6+, use .target for the deployed address
-    console.log("IskoChainCredential deployed to:", contract.target);
+  // Pass initialAdmins to the contract constructor
+  const IskoChainCredential = await ethers.getContractFactory("IskoChainCredential");
+  const contract = await IskoChainCredential.deploy(initialAdmins);
+
+  await contract.waitForDeployment();
+
+  // Ethers v6: use .getAddress()
+  console.log("IskoChainCredential deployed to:", await contract.getAddress());
 }
 
 main().catch((error) => {

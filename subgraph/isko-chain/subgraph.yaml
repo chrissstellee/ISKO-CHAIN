@@ -10,9 +10,9 @@ dataSources:
     name: IskoChainCredential
     network: base-sepolia
     source:
-      address: "0x0de2179de370E94bCeF6f2C2C39342e99648Ff6E"
+      address: "0xaE5e27768045139e4C514c4FD7ECD1EC06B22f5a"
       abi: IskoChainCredential
-      startBlock: 27123926
+      startBlock: 27238127
     mapping:
       kind: ethereum/events
       apiVersion: 0.0.9
@@ -34,10 +34,14 @@ dataSources:
           handler: handleApprovalForAll
         - event: BatchMetadataUpdate(uint256,uint256)
           handler: handleBatchMetadataUpdate
+        # - event: CredentialIssued(indexed address,indexed uint256,string)
+        #   handler: handleCredentialIssued # If implemented
+        - event: CredentialReissued(indexed uint256,indexed uint256,indexed address)
+          handler: handleCredentialReissued
+        - event: CredentialRevoked(indexed uint256,string,indexed address)
+          handler: handleCredentialRevoked
         - event: MetadataUpdate(uint256)
           handler: handleMetadataUpdate
-        - event: OwnershipTransferred(indexed address,indexed address)
-          handler: handleOwnershipTransferred
         - event: Transfer(indexed address,indexed address,indexed uint256)
           handler: handleTransfer
       file: ./src/isko-chain-credential.ts

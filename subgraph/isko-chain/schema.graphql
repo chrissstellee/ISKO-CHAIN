@@ -44,29 +44,32 @@ type OwnershipTransferred @entity(immutable: true) {
   transactionHash: Bytes!
 }
 
-type Credential @entity(immutable: true) {
-  id: ID!                         # Usually the tokenId as a string
+type Credential @entity(immutable: false) {
+  id: ID!
   tokenId: BigInt!
-  credentialCode: String          # Your custom code like "CERT-002312"
-  owner: Bytes!                   # Student's wallet address (current holder)
-  tokenURI: String!               # URI to the metadata (on IPFS or HTTP)
-  credentialType: String          # Degree/Certificate/Award
-  credentialDetails: String       # Title/description, e.g., "Capstone 1 Completion"
-  studentId: String               # For display/reference
-  issuer: String                  # Issuer's email address
-  issueDate: String               # From metadata
-
+  credentialCode: String
+  owner: Bytes! @index
+  tokenURI: String!
+  credentialType: String
+  credentialDetails: String
+  studentId: String
+  issuer: String
+  issueDate: String
   firstName: String
   middleName: String
   lastName: String
-  yearLevel: Int              # Store as String for compatibility (or Int if always numeric)
-  program: String                 # e.g., "Bachelor of Science in IT"
-  additionalInfo: String          # Any extra info/notes
-
-  createdAt: BigInt!              # Block timestamp of creation
-  updatedAt: BigInt!              # Last block timestamp of transfer or update
+  yearLevel: Int
+  program: String
+  additionalInfo: String
+  createdAt: BigInt!
+  updatedAt: BigInt!
+  status: String @index                 # "active", "revoked", etc.
+  revocationReason: String
+  replacedByTokenId: String
+  revokedBy: Bytes                      # <-- New: admin who revoked
+  reissuedBy: Bytes     
+  admin: Bytes                # <-- New: admin who reissued
 }
-
 
 type Transfer @entity(immutable: true) {
   id: Bytes!

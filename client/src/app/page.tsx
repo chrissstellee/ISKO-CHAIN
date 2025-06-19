@@ -19,7 +19,7 @@ export default function LandingPage() {
     if (isConnected && address) {
       setCheckingRole(true);
       // Call your backend API to get role
-      fetch(`http://localhost:3001/users/get-role?walletAddress=${address}`)
+        fetch(`http://localhost:3001/users/get-role?walletAddress=${address}`)
         .then(res => res.json())
         .then(data => {
           setCheckingRole(false);

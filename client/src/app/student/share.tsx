@@ -1,4 +1,3 @@
-// client/src/app/student/share.tsx
 "use client"
 import React, { useState } from 'react';
 import QRCodeModal from '@/components/modal/student-qr';
@@ -7,6 +6,7 @@ type Credential = {
   tokenId: string;
   credentialType?: string;
   credentialCode?: string;
+  status?: string; // Make sure your credential objects have this field!
   // Add other fields if needed
 };
 
@@ -18,10 +18,14 @@ interface ShareCredentialsProps {
 export default function ShareCredentials({ credentials, loading }: ShareCredentialsProps) {
   const [isQRModalOpen, setIsQRModalOpen] = useState(false);
   const [selectedTokenId, setSelectedTokenId] = useState("");
-  const [expiry, setExpiry] = useState("");
-  
+
+  // Only show credentials with status "Issued"
+  const activeCredentials = credentials.filter(
+    (c) => c.status === "active"
+  );
+
   // Build the sharing link based on selected credential
-  const selectedCredential = credentials.find((c) => c.tokenId === selectedTokenId);
+  const selectedCredential = activeCredentials.find((c) => c.tokenId === selectedTokenId);
   const shareLink = selectedCredential
     ? `http://192.168.100.199:3000/verifier?tokenId=${selectedCredential.tokenId}`
     : "";
@@ -41,30 +45,20 @@ export default function ShareCredentials({ credentials, loading }: ShareCredenti
               className="share-select-input"
               value={selectedTokenId}
               onChange={e => setSelectedTokenId(e.target.value)}
-              disabled={loading || credentials.length === 0}
+              disabled={loading || activeCredentials.length === 0}
             >
               <option value="">--Select Credential--</option>
-              {credentials.map((cred) => (
+              {activeCredentials.map((cred) => (
                 <option key={cred.tokenId} value={cred.tokenId}>
                   {cred.credentialType || "Credential"} ({cred.credentialCode})
                 </option>
               ))}
             </select>
-          </div>
-          <div className="share-form-group">
-            <label htmlFor="expiry">Expires after:</label>
-            <select
-              id="expiry"
-              className="share-select-input"
-              value={expiry}
-              onChange={e => setExpiry(e.target.value)}
-              disabled={loading}
-            >
-              <option value="">--Select--</option>
-              <option value="1d">1 Day</option>
-              <option value="1w">1 Week</option>
-              <option value="1m">1 Month</option>
-            </select>
+            {activeCredentials.length === 0 && (
+              <span style={{color: "#b71c1c", fontSize: 14}}>
+                No active credentials available to share.
+              </span>
+            )}
           </div>
         </div>
         <div className="share-button-row">

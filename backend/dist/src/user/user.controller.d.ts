@@ -15,15 +15,41 @@ export declare class UserController {
     }): Promise<{
         id: number;
         createdAt: Date;
+        role: string;
         walletAddress: string;
         studentId: string | null;
-        role: string;
         email: string | null;
         firstName: string | null;
         middleName: string | null;
         lastName: string | null;
         yearLevel: number | null;
         programId: number | null;
+    }>;
+    addAdmin(body: {
+        walletAddress: string;
+        email: string;
+    }): Promise<{
+        success: boolean;
+        alreadyOnChain: boolean;
+        user: {
+            id: any;
+            walletAddress: string;
+            email: string;
+            role: any;
+        };
+        message: string;
+        txHash?: undefined;
+    } | {
+        success: boolean;
+        txHash: any;
+        user: {
+            id: any;
+            walletAddress: string;
+            email: string;
+            role: any;
+        };
+        message: string;
+        alreadyOnChain?: undefined;
     }>;
     getRole(walletAddress: string): Promise<{
         role: string | null;

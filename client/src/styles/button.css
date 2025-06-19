@@ -23,6 +23,7 @@
   border: none;
   cursor: pointer;
   font-weight: 500;
+  margin-top: 2rem;
 }
 
 .certificate-button:hover {

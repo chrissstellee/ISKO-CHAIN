@@ -4,7 +4,7 @@ import React, { useState, useEffect } from "react";
 export default function AddUserForm() {
   const [walletAddress, setWalletAddress] = useState('');
   const [studentId, setStudentId] = useState('');
-  const [role, setRole] = useState('student');
+  const [role, setRole] = useState(''); // default: empty string for "-- Select Role --"
   const [email, setEmail] = useState('');
   const [firstName, setFirstName] = useState('');
   const [middleName, setMiddleName] = useState('');
@@ -17,7 +17,7 @@ export default function AddUserForm() {
 
   // Fetch program list on mount
   useEffect(() => {
-    if (role !== 'student') return; // Only fetch when relevant
+    if (role !== 'student') return;
     fetch('http://localhost:3001/programs')
       .then(res => res.json())
       .then(data => setPrograms(data))
@@ -41,25 +41,30 @@ export default function AddUserForm() {
       payload.lastName = lastName;
       payload.yearLevel = yearLevel ? Number(yearLevel) : undefined;
       payload.programId = programId !== '' ? Number(programId) : undefined;
+      const res = await fetch('http://localhost:3001/users/bind-wallet', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+      });
+      if (res.ok) setSuccess('Student added!');
+      else setSuccess('Failed to add student.');
     }
 
     if (role === "admin") {
       payload.email = email;
+      const res = await fetch('http://localhost:3001/users/add-admin', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ walletAddress, email }),
+      });
+      if (res.ok) setSuccess('Admin added!');
+      else setSuccess('Failed to add admin.');
     }
-
-    const res = await fetch('http://localhost:3001/users/bind-wallet', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(payload),
-    });
-
-    if (res.ok) setSuccess('✅ User added!');
-    else setSuccess('❌ Failed to add user.');
 
     setLoading(false);
     setWalletAddress('');
     setStudentId('');
-    setRole('student');
+    setRole('');
     setEmail('');
     setFirstName('');
     setMiddleName('');
@@ -207,7 +212,7 @@ export default function AddUserForm() {
                   border: "1px solid #e2e8f0",
                   marginTop: 6,
                   fontSize: 15,
-                  background: programs.length ? "#fff" : "#f9f9f9"
+                  background: "#fff"
                 }}
               >
                 <option value="">-- Select Program --</option>
@@ -249,6 +254,7 @@ export default function AddUserForm() {
             className="input"
             value={role}
             onChange={e => setRole(e.target.value)}
+            required
             style={{
               width: "100%",
               padding: "8px",
@@ -256,8 +262,10 @@ export default function AddUserForm() {
               border: "1px solid #e2e8f0",
               marginTop: 6,
               fontSize: 15,
+              background: "#fff"
             }}
           >
+            <option value="">-- Select Role --</option>
             <option value="student">Student</option>
             <option value="admin">Admin</option>
           </select>

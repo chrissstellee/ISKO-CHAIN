@@ -72,3 +72,8 @@
   color: #6b7280;            /* gray text */
   cursor: not-allowed;
 }
+
+.form-select-white {
+  background: #fff !important; /* Ensure it overrides defaults */
+  color: #222;
+}

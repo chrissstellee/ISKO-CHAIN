@@ -1,3 +1,4 @@
+/* eslint-disable prefer-const */
 /* eslint-disable @typescript-eslint/no-explicit-any */
 /* eslint-disable @typescript-eslint/no-unused-vars */
 "use client";
@@ -5,6 +6,8 @@ import { useState, ChangeEvent, useEffect, useRef } from "react";
 import { useAccount, useWalletClient } from "wagmi";
 import { ethers } from "ethers";
 import IskoChainCredentialABI from "@/lib/IskoChainCredential.json";
+import { createClient, gql } from 'urql';
+import { cacheExchange, fetchExchange } from "@urql/core";
 import '@/styles/card.css';
 import '@/styles/text.css';
 import '@/styles/button.css';
@@ -14,6 +17,54 @@ import '@/styles/table.css';
 import '@/styles/chip.css';
 
 const CONTRACT_ADDRESS = process.env.NEXT_PUBLIC_DEPLOYED_CONTRACT_ADDRESS;
+
+// --- Poll subgraph for newly issued credential ---
+const SUBGRAPH_URL = "https://api.studio.thegraph.com/query/113934/isko-chain/version/latest";
+const client = createClient({
+  url: SUBGRAPH_URL,
+  exchanges: [cacheExchange, fetchExchange],
+});
+
+async function waitForSubgraphCredential(credentialCode: string, maxWaitMs = 10000): Promise<boolean> {
+  const query = `
+    query($code: String!) {
+      credentials(where: { credentialCode: $code }) {
+        tokenId
+      }
+    }
+  `;
+  const start = Date.now();
+  let found = false;
+  while (Date.now() - start < maxWaitMs) {
+    const res = await fetch(SUBGRAPH_URL, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ query, variables: { code: credentialCode } }),
+    });
+    try {
+      const data = await res.json();
+      if (data.data && data.data.credentials && data.data.credentials.length > 0) {
+        return true;
+      }
+    } catch {}
+    await new Promise(res => setTimeout(res, 1500));
+  }
+
+  // *** FINAL CHECK after loop just in case! ***
+  const res = await fetch(SUBGRAPH_URL, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ query, variables: { code: credentialCode } }),
+  });
+  try {
+    const data = await res.json();
+    if (data.data && data.data.credentials && data.data.credentials.length > 0) {
+      return true;
+    }
+  } catch {}
+
+  return false;
+}
 
 interface CredentialData {
   credentialType: string;
@@ -32,19 +83,19 @@ interface CredentialData {
 
 interface Props {
   onSubmit?: (data: CredentialData) => void;
+  onIssueSuccess?: () => void; // New!
 }
 
-export default function IssueCredentialsForm({ onSubmit }: Props) {
-  // Form state
+export default function IssueCredentialsForm({ onSubmit, onIssueSuccess }: Props) {
+  // ...all your other state
   const [credentialType, setCredentialType] = useState("");
   const [studentId, setStudentId] = useState("");
   const [credentialDetails, setCredentialDetails] = useState("");
-  const [issueDate, setIssueDate] = useState("");
+  const [issueDate, setIssueDate] = useState(getTodayDateString());
   const [issuer, setIssuer] = useState("");
   const [metadata, setMetadata] = useState("");
-  const [credentialCode, setCredentialCode] = useState(""); // This will be set after backend responds
+  const [credentialCode, setCredentialCode] = useState("");
 
-  // Student info
   const [firstName, setFirstName] = useState("");
   const [middleName, setMiddleName] = useState("");
   const [lastName, setLastName] = useState("");
@@ -58,6 +109,11 @@ export default function IssueCredentialsForm({ onSubmit }: Props) {
 
   const { address, isConnected } = useAccount();
   const { data: walletClient } = useWalletClient();
+
+  // Set issueDate to today on form open/reset
+  useEffect(() => {
+    setIssueDate(getTodayDateString());
+  }, []);
 
   // Fetch admin email on mount or address change
   useEffect(() => {
@@ -130,42 +186,12 @@ export default function IssueCredentialsForm({ onSubmit }: Props) {
     };
   }, [studentId]);
 
-  const getTodayDateString = () => {
-    const today = new Date();
-    const yyyy = today.getFullYear();
-    const mm = String(today.getMonth() + 1).padStart(2, '0');
-    const dd = String(today.getDate()).padStart(2, '0');
-    return `${yyyy}-${mm}-${dd}`;
-  };
-
-  const validateForm = () => {
-    const newErrors: Record<string, string> = {};
-    if (!credentialType) newErrors.credentialType = "Credential type is required.";
-    if (!studentId || !/^[a-zA-Z0-9\-]+$/.test(studentId)) newErrors.studentId = "Valid alphanumeric student ID is required.";
-    if (!credentialDetails) newErrors.credentialDetails = "Credential title is required.";
-    if (!issueDate) {
-      newErrors.issueDate = "Issue date is required.";
-    } else {
-      const selectedDate = new Date(issueDate);
-      const today = new Date(getTodayDateString());
-      if (selectedDate < today) {
-        newErrors.issueDate = "Issue date cannot be a past date.";
-      }
-    }
-    if (!issuer) newErrors.issuer = "Issuer email not loaded. Please try again.";
-    if (!firstName) newErrors.firstName = "First name required (check student ID).";
-    if (!lastName) newErrors.lastName = "Last name required (check student ID).";
-    if (!yearLevel) newErrors.yearLevel = "Year level required (check student ID).";
-    if (!programName) newErrors.program = "Program required (check student ID).";
-    setErrors(newErrors);
-    return Object.keys(newErrors).length === 0;
-  };
-
+  // Always set issueDate to today on form reset
   const handleRefresh = () => {
     setCredentialType('');
     setStudentId('');
     setCredentialDetails('');
-    setIssueDate('');
+    setIssueDate(getTodayDateString());
     setMetadata('');
     setErrors({});
     setStatus('');
@@ -175,6 +201,21 @@ export default function IssueCredentialsForm({ onSubmit }: Props) {
     setYearLevel('');
     setProgramName('');
     setCredentialCode('');
+  };
+
+  const validateForm = () => {
+    const newErrors: Record<string, string> = {};
+    if (!credentialType) newErrors.credentialType = "Credential type is required.";
+    if (!studentId || !/^[a-zA-Z0-9\-]+$/.test(studentId)) newErrors.studentId = "Valid alphanumeric student ID is required.";
+    if (!credentialDetails) newErrors.credentialDetails = "Credential title is required.";
+    // Issue date is always set and valid by default!
+    if (!issuer) newErrors.issuer = "Issuer email not loaded. Please try again.";
+    if (!firstName) newErrors.firstName = "First name required (check student ID).";
+    if (!lastName) newErrors.lastName = "Last name required (check student ID).";
+    if (!yearLevel) newErrors.yearLevel = "Year level required (check student ID).";
+    if (!programName) newErrors.program = "Program required (check student ID).";
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
   };
 
   const handleSubmit = async () => {
@@ -197,7 +238,7 @@ export default function IssueCredentialsForm({ onSubmit }: Props) {
         programName,
       };
 
-      // Call backend; credentialCode will be generated there
+      // Backend issues metadata
       const res = await fetch("http://localhost:3001/credentials/issue", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -241,24 +282,37 @@ export default function IssueCredentialsForm({ onSubmit }: Props) {
       const tx = await contract.issueCredential(walletAddress, tokenURI);
       await tx.wait();
 
-      setStatus("✅ Credential issued successfully!");
-      // Optionally keep credential code visible
+      setStatus("Waiting for The Graph to index the new credential...");
 
-      if (onSubmit) {
-        onSubmit({
-          credentialType,
-          studentId,
-          credentialDetails,
-          issueDate,
-          issuer,
-          metadata,
-          firstName,
-          middleName,
-          lastName,
-          yearLevel: yearLevel === "" ? undefined : yearLevel,
-          programName,
-          credentialCode: generatedCode,
-        });
+      // --- POLLING LOGIC ---
+      const found = await waitForSubgraphCredential(generatedCode);
+
+      if (found) {
+        setStatus("✅ Credential issued and indexed!");
+        if (onSubmit) {
+          onSubmit({
+            credentialType,
+            studentId,
+            credentialDetails,
+            issueDate,
+            issuer,
+            metadata,
+            firstName,
+            middleName,
+            lastName,
+            yearLevel: yearLevel === "" ? undefined : yearLevel,
+            programName,
+            credentialCode: generatedCode,
+          });
+        }
+        if (onIssueSuccess) {
+          onIssueSuccess();
+        }
+      } else {
+        setStatus("⚠️ Credential issued, but subgraph did not index it in time. It will appear soon.");
+        if (onIssueSuccess) {
+          onIssueSuccess();
+        }
       }
     } catch (err: any) {
       setStatus("Blockchain mint failed. " + (err?.message || ""));
@@ -276,16 +330,16 @@ export default function IssueCredentialsForm({ onSubmit }: Props) {
       <div className="form-group">
         <label className="input-label">Credential Type:</label>
         <select
-          className={`form-control ${errors.credentialType ? "input-error-border" : ""}`}
+          className={`form-control form-select-white ${errors.credentialType ? "input-error-border" : ""}`}
           value={credentialType || ""}
           onChange={(e: ChangeEvent<HTMLSelectElement>) => setCredentialType(e.target.value)}
         >
           <option value="">-- Select Type --</option>
-          <option>Degree Certificate</option>
+          <option>Degree Completion</option>
           <option>Course Completion</option>
           <option>Honor/Award</option>
-          <option>Workshop Certificate</option>
-          <option>Transcript</option>
+          <option>Workshop Completion</option>
+          {/* <option>Transcript</option> */}
         </select>
         {errors.credentialType && <span className="input-error">{errors.credentialType}</span>}
       </div>
@@ -393,19 +447,10 @@ export default function IssueCredentialsForm({ onSubmit }: Props) {
             />
             {errors.credentialDetails && <span className="input-error">{errors.credentialDetails}</span>}
           </div>
-          <div className="input-column input-column--small">
-            <label className="input-label">Issue Date:</label>
-            <input
-              type="date"
-              className={`date-picker ${errors.issueDate ? "input-error-border" : ""}`}
-              value={issueDate || ""}
-              min={getTodayDateString()}
-              onChange={(e) => setIssueDate(e.target.value)}
-            />
-            {errors.issueDate && <span className="input-error">{errors.issueDate}</span>}
-          </div>
         </div>
       </div>
+
+      {/* REMOVED Issue Date field from UI */}
 
       <div className="form-group">
         <label className="input-label">Issuer (admin email):</label>
@@ -430,9 +475,6 @@ export default function IssueCredentialsForm({ onSubmit }: Props) {
       </div>
 
       <div className="action-buttons">
-        <button className="prev-button" type="button" disabled={loadingIssuer}>
-          Preview
-        </button>
         <button
           className="issue-button"
           type="button"

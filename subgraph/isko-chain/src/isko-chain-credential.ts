@@ -5,15 +5,17 @@ import {
   BatchMetadataUpdate as BatchMetadataUpdateEvent,
   IskoChainCredential,
   MetadataUpdate as MetadataUpdateEvent,
-  OwnershipTransferred as OwnershipTransferredEvent,
-  Transfer as TransferEvent
+  // OwnershipTransferred as OwnershipTransferredEvent,
+  Transfer as TransferEvent,
+  CredentialRevoked as CredentialRevokedEvent,
+  CredentialReissued as CredentialReissuedEvent
 } from "../generated/IskoChainCredential/IskoChainCredential"
 import {
   Approval,
   ApprovalForAll,
   BatchMetadataUpdate,
   MetadataUpdate,
-  OwnershipTransferred,
+  // OwnershipTransferred,
   Transfer,
   Credential // <-- Add this
 } from "../generated/schema"
@@ -78,21 +80,47 @@ export function handleMetadataUpdate(event: MetadataUpdateEvent): void {
   entity.save()
 }
 
-export function handleOwnershipTransferred(
-  event: OwnershipTransferredEvent
-): void {
-  let entity = new OwnershipTransferred(
-    event.transaction.hash.concatI32(event.logIndex.toI32())
-  )
-  entity.previousOwner = event.params.previousOwner
-  entity.newOwner = event.params.newOwner
+// export function handleOwnershipTransferred(
+//   event: OwnershipTransferredEvent
+// ): void {
+//   let entity = new OwnershipTransferred(
+//     event.transaction.hash.concatI32(event.logIndex.toI32())
+//   )
+//   entity.previousOwner = event.params.previousOwner
+//   entity.newOwner = event.params.newOwner
 
-  entity.blockNumber = event.block.number
-  entity.blockTimestamp = event.block.timestamp
-  entity.transactionHash = event.transaction.hash
+//   entity.blockNumber = event.block.number
+//   entity.blockTimestamp = event.block.timestamp
+//   entity.transactionHash = event.transaction.hash
 
-  entity.save()
+//   entity.save()
+// }
+
+export function handleCredentialRevoked(event: CredentialRevokedEvent): void {
+  let id = event.params.tokenId.toString();
+  let credential = Credential.load(id);
+  if (credential != null) {
+    credential.status = "revoked";
+    credential.revocationReason = event.params.reason;
+    credential.updatedAt = event.block.timestamp;
+    // Save the admin who performed the action
+    credential.admin = event.params.admin;
+    credential.save();
+  }
 }
+
+export function handleCredentialReissued(event: CredentialReissuedEvent): void {
+  let oldId = event.params.oldTokenId.toString();
+  let newId = event.params.newTokenId.toString();
+  let credential = Credential.load(oldId);
+  if (credential != null) {
+    credential.replacedByTokenId = newId;
+    credential.updatedAt = event.block.timestamp;
+    credential.admin = event.params.admin;
+    credential.save();
+  }
+}
+
 
 export function handleTransfer(event: TransferEvent): void {
   // Save the raw Transfer entity (keep your current code)
@@ -117,6 +145,9 @@ export function handleTransfer(event: TransferEvent): void {
     credential = new Credential(id)
     credential.tokenId = event.params.tokenId
     credential.createdAt = event.block.timestamp
+    credential.status = "active"; // Set active on creation
+    credential.revocationReason = "";
+    credential.replacedByTokenId = "";
   }
   credential.updatedAt = event.block.timestamp
   credential.owner = event.params.to
@@ -131,23 +162,56 @@ export function handleTransfer(event: TransferEvent): void {
       let metadata = ipfs.cat(hash)
       if (metadata) {
         let data = json.fromBytes(metadata).toObject()
-        if (data.isSet("credentialCode")) credential.credentialCode = data.get("credentialCode")!.toString();
-        if (data.isSet("credentialType")) credential.credentialType = data.get("credentialType")!.toString();
-        if (data.isSet("credentialDetails")) credential.credentialDetails = data.get("credentialDetails")!.toString();
-        if (data.isSet("studentId")) credential.studentId = data.get("studentId")!.toString();
-        if (data.isSet("issueDate")) credential.issueDate = data.get("issueDate")!.toString();
-        if (data.isSet("issuer")) credential.issuer = data.get("issuer")!.toString();
-        if (data.isSet("firstName")) credential.firstName = data.get("firstName")!.toString();
-        if (data.isSet("middleName")) credential.middleName = data.get("middleName")!.toString();
-        if (data.isSet("lastName")) credential.lastName = data.get("lastName")!.toString();
-        if (data.isSet("yearLevel")) {
-          let yearLevelValue = data.get("yearLevel");
-          if (yearLevelValue && yearLevelValue.kind == JSONValueKind.NUMBER) {
-            credential.yearLevel = yearLevelValue.toI64() as i32;
-          }
+      if (data.isSet("credentialCode")) {
+        let v = data.get("credentialCode");
+        if (v && v.kind == JSONValueKind.STRING) credential.credentialCode = v.toString();
+      }
+      if (data.isSet("credentialType")) {
+        let v = data.get("credentialType");
+        if (v && v.kind == JSONValueKind.STRING) credential.credentialType = v.toString();
+      }
+      if (data.isSet("credentialDetails")) {
+        let v = data.get("credentialDetails");
+        if (v && v.kind == JSONValueKind.STRING) credential.credentialDetails = v.toString();
+      }
+      if (data.isSet("studentId")) {
+        let v = data.get("studentId");
+        if (v && v.kind == JSONValueKind.STRING) credential.studentId = v.toString();
+      }
+      if (data.isSet("issueDate")) {
+        let v = data.get("issueDate");
+        if (v && v.kind == JSONValueKind.STRING) credential.issueDate = v.toString();
+      }
+      if (data.isSet("issuer")) {
+        let v = data.get("issuer");
+        if (v && v.kind == JSONValueKind.STRING) credential.issuer = v.toString();
+      }
+      if (data.isSet("firstName")) {
+        let v = data.get("firstName");
+        if (v && v.kind == JSONValueKind.STRING) credential.firstName = v.toString();
+      }
+      if (data.isSet("middleName")) {
+        let v = data.get("middleName");
+        if (v && v.kind == JSONValueKind.STRING) credential.middleName = v.toString();
+      }
+      if (data.isSet("lastName")) {
+        let v = data.get("lastName");
+        if (v && v.kind == JSONValueKind.STRING) credential.lastName = v.toString();
+      }
+      if (data.isSet("yearLevel")) {
+        let yearLevelValue = data.get("yearLevel");
+        if (yearLevelValue && yearLevelValue.kind == JSONValueKind.NUMBER) {
+          credential.yearLevel = yearLevelValue.toI64() as i32;
         }
-        if (data.isSet("program")) credential.program = data.get("program")!.toString();
-        if (data.isSet("additionalInfo")) credential.additionalInfo = data.get("additionalInfo")!.toString();
+      }
+      if (data.isSet("program")) {
+        let v = data.get("program");
+        if (v && v.kind == JSONValueKind.STRING) credential.program = v.toString();
+      }
+      if (data.isSet("additionalInfo")) {
+        let v = data.get("additionalInfo");
+        if (v && v.kind == JSONValueKind.STRING) credential.additionalInfo = v.toString();
+      }
 
 
       }

@@ -23,6 +23,9 @@ let UserController = class UserController {
     async bindWallet(body) {
         return this.userService.bindWallet(body.walletAddress, body.studentId, body.role, body.email, body.firstName, body.middleName, body.lastName, body.yearLevel, body.programId);
     }
+    async addAdmin(body) {
+        return this.userService.addAdminUnified(body.walletAddress, body.email);
+    }
     async getRole(walletAddress) {
         return this.userService.getRole(walletAddress);
     }
@@ -41,6 +44,13 @@ __decorate([
     __metadata("design:paramtypes", [Object]),
     __metadata("design:returntype", Promise)
 ], UserController.prototype, "bindWallet", null);
+__decorate([
+    (0, common_1.Post)('add-admin'),
+    __param(0, (0, common_1.Body)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Object]),
+    __metadata("design:returntype", Promise)
+], UserController.prototype, "addAdmin", null);
 __decorate([
     (0, common_1.Get)('get-role'),
     __param(0, (0, common_1.Query)('walletAddress')),

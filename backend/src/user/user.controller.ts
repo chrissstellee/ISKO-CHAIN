@@ -16,7 +16,11 @@ export class UserController {
         return this.userService.bindWallet(body.walletAddress, body.studentId, body.role, body.email, body.firstName, body.middleName, body.lastName, body.yearLevel, body.programId);
     }
 
-    @Get('get-role')
+    @Post('add-admin')
+    async addAdmin(@Body() body: { walletAddress: string; email: string }) {
+        return this.userService.addAdminUnified(body.walletAddress, body.email);
+    }
+        @Get('get-role')
     async getRole(@Query('walletAddress') walletAddress: string) {
         return this.userService.getRole(walletAddress);
     }

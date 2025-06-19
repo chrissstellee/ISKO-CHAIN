@@ -14,6 +14,8 @@ interface Credential {
   credentialType?: string;
   credentialDetails?: string;
   issueDate?: string;
+  status?: string; // <-- Make sure status is included!
+  additionalInfo?: string; // Optional field for any extra info
   // add other fields as needed
 }
 
@@ -27,11 +29,19 @@ export default function StudentWallet({ credentials, loading }: StudentWalletPro
   const [selected, setSelected] = useState<any | null>(null);
 
   if (loading) return <div>Loading credentials...</div>;
-  if (!credentials || credentials.length === 0)
+
+  // Filter credentials: Only show those NOT revoked or reissued
+  const validCredentials = credentials.filter(
+    (cred) =>
+      cred.status?.toLowerCase() !== "revoked" &&
+      cred.status?.toLowerCase() !== "reissued"
+  );
+
+  if (!validCredentials || validCredentials.length === 0)
     return <div>No credentials found for this wallet.</div>;
 
   // Use the owner address from the first credential for display
-  const address = credentials[0]?.owner;
+  const address = validCredentials[0]?.owner;
 
   return (
     <div className="card">
@@ -40,7 +50,7 @@ export default function StudentWallet({ credentials, loading }: StudentWalletPro
       <div className="wallet-credentials">
         <p className="wallet-title">Your Secure Credential Wallet</p>
         <div className="wallet-address">{address}</div>
-        <div className="wallet-verified">{credentials.length} Verified Credentials</div>
+        <div className="wallet-verified">{validCredentials.length} Verified Credentials</div>
       </div>
       <h2 className="card-title">My Credentials</h2>
       <div className="student-table-container">
@@ -55,7 +65,7 @@ export default function StudentWallet({ credentials, loading }: StudentWalletPro
             </tr>
           </thead>
           <tbody>
-            {credentials.map((cred) => (
+            {validCredentials.map((cred) => (
               <tr key={cred.tokenId}>
                 <td>{cred.credentialCode || cred.tokenId}</td>
                 <td>{cred.credentialType || "—"}</td>

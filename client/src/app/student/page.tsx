@@ -35,9 +35,11 @@ const CREDENTIALS_QUERY = gql`
       credentialDetails
       firstName
       lastName
+      status
       issueDate
       tokenId
       tokenURI
+      additionalInfo
       owner
     }
   }

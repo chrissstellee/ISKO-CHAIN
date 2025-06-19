@@ -1,10 +1,11 @@
- 
 /* eslint-disable @typescript-eslint/no-explicit-any */
-/* eslint-disable @next/next/no-img-element */
 "use client";
 
 import React, { useState } from 'react';
 import CertificateModal from "@/components/modal/certificate-modal";
+import DiplomaTemplate from "@/components/certificates/DiplomaTemplate";
+import CertificateMiniPreview from "@/components/certificates/CertificateMiniPreview";
+
 import "@/styles/verifier.css";
 import "@/styles/card.css";
 import "@/styles/text.css";
@@ -23,6 +24,19 @@ export default function CredentialDetails({ credential, transfer }: Props) {
       <div className="card" style={{ marginTop: 24 }}>
         <h2 className="card-title">Credential Details</h2>
         <div style={{ color: "#888", padding: 16 }}>No credential loaded. Please verify first.</div>
+      </div>
+    );
+  }
+
+  // Check for revoked or reissued
+  const status = credential.status?.toLowerCase();
+  if (status === "revoked" || status === "reissued") {
+    return (
+      <div className="card" style={{ marginTop: 24 }}>
+        <h2 className="card-title">Credential Details</h2>
+        <div style={{ color: "#b71c1c", padding: 24, fontWeight: 600 }}>
+          This credential has been {status} and is no longer valid.
+        </div>
       </div>
     );
   }
@@ -106,7 +120,16 @@ export default function CredentialDetails({ credential, transfer }: Props) {
         </div>
         {/* Certificate Preview (Modal Trigger) */}
         <div className="certificate-viewer">
-          <div className="certificate-placeholder" />
+          <div className="certificate-placeholder">
+            <CertificateMiniPreview credential={{
+              firstName,
+              lastName,
+              credentialType,
+              credentialDetails,
+              issueDate,
+              credentialCode,
+            }} />
+          </div>
           <button className="certificate-button" onClick={() => setIsModalOpen(true)}>
             View Certificate
           </button>
@@ -117,8 +140,16 @@ export default function CredentialDetails({ credential, transfer }: Props) {
         isOpen={isModalOpen}
         onClose={() => setIsModalOpen(false)}
         certificateContent={
-          <img src="/path/to/certificate.jpg" alt="Certificate" />
-          // Or dynamically generate from credential info if you wish
+          <DiplomaTemplate credential={{
+            credentialDetails,
+            credentialType,
+            studentId: credential.studentId,
+            issueDate,
+            firstName,
+            lastName,
+            credentialCode,
+            // Add other props here if needed
+          }} />
         }
       />
     </div>

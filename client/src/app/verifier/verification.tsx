@@ -1,4 +1,4 @@
-/* eslint-disable @next/next/no-img-element */
+ 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 "use client";
 
@@ -29,6 +29,7 @@ const CREDENTIAL_QUERY = gql`
       program
       tokenId
       owner
+      status
     }
   }
 `;
@@ -46,6 +47,7 @@ const CREDENTIAL_BY_TOKENID_QUERY = gql`
       program
       tokenId
       owner
+      status
     }
   }
 `;
@@ -73,9 +75,6 @@ export default function Verification({ setCredential, setTransfer, tokenIdFromUr
   const [verificationStatus, setVerificationStatus] = useState<"idle" | "loading" | "verified" | "invalid">("idle");
   const [error, setError] = useState<string | null>(null);
 
-  // For QR UI (just for looks, actual QR extraction not implemented)
-  const [qrImage, setQrImage] = useState<string | null>(null);
-
   // Auto-verify if tokenId is in the URL
   useEffect(() => {
     if (tokenIdFromUrl) {
@@ -97,6 +96,19 @@ export default function Verification({ setCredential, setTransfer, tokenIdFromUr
     if (!cred) {
       setVerificationStatus("invalid");
       setError("Credential not found.");
+      return;
+    }
+
+    // Check for revoked/reissued status
+    const status = cred.status?.toLowerCase();
+    if (status === "revoked" || status === "reissued") {
+      setVerificationStatus("invalid");
+      setCredential(cred); // You may set to null if you want to hide details
+      setError(
+        status === "revoked"
+          ? "This credential has been revoked and is no longer valid."
+          : "This credential has been reissued and is no longer valid."
+      );
       return;
     }
 
@@ -125,6 +137,20 @@ export default function Verification({ setCredential, setTransfer, tokenIdFromUr
       setError("Credential not found.");
       return;
     }
+
+    // Check for revoked/reissued status
+    const status = cred.status?.toLowerCase();
+    if (status === "revoked" || status === "reissued") {
+      setVerificationStatus("invalid");
+      setCredential(cred); // You may set to null if you want to hide details
+      setError(
+        status === "revoked"
+          ? "This credential has been revoked and is no longer valid."
+          : "This credential has been reissued and is no longer valid."
+      );
+      return;
+    }
+
     setCredential(cred);
 
     // Query transfer info by tokenId
@@ -141,16 +167,6 @@ export default function Verification({ setCredential, setTransfer, tokenIdFromUr
     setError(null);
     setCredential(null);
     setTransfer(null);
-    setQrImage(null);
-  };
-
-  const handleQrImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (file) {
-      const objectUrl = URL.createObjectURL(file);
-      setQrImage(objectUrl);
-      // QR scanning not implemented, just UI
-    }
   };
 
   return (
@@ -159,7 +175,6 @@ export default function Verification({ setCredential, setTransfer, tokenIdFromUr
       <Tabs defaultValue="id" className="w-full">
         <TabsList>
           <TabsTrigger value="id">Credential Code Lookup</TabsTrigger>
-          <TabsTrigger value="qr">QR Code</TabsTrigger>
         </TabsList>
 
         {/* ID Verification Tab */}
@@ -181,36 +196,6 @@ export default function Verification({ setCredential, setTransfer, tokenIdFromUr
             >
               {verificationStatus === "loading" ? "Verifying..." : "Verify"}
             </button>
-          </div>
-        </TabsContent>
-
-        {/* QR Code Tab */}
-        <TabsContent value="qr">
-          <button className="refresh-button" onClick={handleRefresh}>⟳ Refresh</button>
-          <div className="qr-code-box">
-            {!qrImage ? (
-              <>
-                <p className="qr-code-title">Choose how to scan the QR Code:</p>
-                <div className="qr-code-actions">
-                  <button className="camera-button">Use Camera</button>
-                  <label className="upload-label">
-                    Upload QR Code Image
-                    <input type="file" accept="image/*" onChange={handleQrImageUpload} />
-                  </label>
-                </div>
-              </>
-            ) : (
-              <div className="qr-preview-wrapper" style={{ flexDirection: "column" }}>
-                <img src={qrImage} alt="QR Preview" className="qr-preview" />
-                <div style={{ marginTop: "1rem", display: "flex", gap: "1rem" }}>
-                  <label className="upload-label">
-                    Upload Another
-                    <input type="file" accept="image/*" onChange={handleQrImageUpload} />
-                  </label>
-                  <button className="camera-button" onClick={handleRefresh}>Remove</button>
-                </div>
-              </div>
-            )}
           </div>
         </TabsContent>
       </Tabs>
