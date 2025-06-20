@@ -10,9 +10,9 @@ dataSources:
     name: IskoChainCredential
     network: base-sepolia
     source:
-      address: "0xD81fa9D278F8714348225153BAf1B82034CE0545"
+      address: "0x6cF023595Ccfb46589Cc730dD9c7D3797751C484"
       abi: IskoChainCredential
-      startBlock: 27288523
+      startBlock: 27320492
     mapping:
       kind: ethereum/events
       apiVersion: 0.0.9
