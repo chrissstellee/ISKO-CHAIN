@@ -8,6 +8,7 @@ import AddUserForm from '@/components/form/add-user-form';
 import { useAccount } from "wagmi";
 import { useRouter } from "next/navigation";
 import { useEffect, useState, useCallback } from "react";
+import UserManagement from '@/components/admin/UserManagement';
 
 import '@/styles/card.css';
 import '@/styles/text.css';
@@ -67,6 +68,7 @@ export default function Admin() {
         <Dashboard refreshCount={refreshCount} />
         <RecentActivity refreshCount={refreshCount} onAnyAction={handleRefresh} />
         <CredentialForm onIssueSuccess={handleRefresh} />
+        <UserManagement />
         <AddUserForm />
       </div>
     </div>

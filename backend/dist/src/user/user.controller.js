@@ -35,6 +35,31 @@ let UserController = class UserController {
             throw new common_1.NotFoundException('Student not found');
         return user;
     }
+    async getUsers(role, search, page, pageSize, programId) {
+        return this.userService.getUsers({
+            role,
+            search,
+            page: Number(page) || 1,
+            pageSize: Number(pageSize) || 10,
+            programId: programId ? Number(programId) : undefined,
+        });
+    }
+    async updateUser(id, body) {
+        const updated = await this.userService.updateUser(id, body);
+        if (!updated)
+            throw new common_1.NotFoundException('User not found');
+        return updated;
+    }
+    async deleteUser(id) {
+        const deleted = await this.userService.deleteUser(id);
+        if (!deleted)
+            throw new common_1.NotFoundException('User not found or already deleted');
+        return { success: true };
+    }
+    async isSuperadmin(walletAddress) {
+        const isSuperadmin = await this.userService.isSuperadmin(walletAddress);
+        return { isSuperadmin };
+    }
 };
 exports.UserController = UserController;
 __decorate([
@@ -65,6 +90,39 @@ __decorate([
     __metadata("design:paramtypes", [String]),
     __metadata("design:returntype", Promise)
 ], UserController.prototype, "getByStudentId", null);
+__decorate([
+    (0, common_1.Get)(),
+    __param(0, (0, common_1.Query)('role')),
+    __param(1, (0, common_1.Query)('search')),
+    __param(2, (0, common_1.Query)('page')),
+    __param(3, (0, common_1.Query)('pageSize')),
+    __param(4, (0, common_1.Query)('programId')),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [String, String, String, String, String]),
+    __metadata("design:returntype", Promise)
+], UserController.prototype, "getUsers", null);
+__decorate([
+    (0, common_1.Put)(':id'),
+    __param(0, (0, common_1.Param)('id', common_1.ParseIntPipe)),
+    __param(1, (0, common_1.Body)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Number, Object]),
+    __metadata("design:returntype", Promise)
+], UserController.prototype, "updateUser", null);
+__decorate([
+    (0, common_1.Delete)(':id'),
+    __param(0, (0, common_1.Param)('id', common_1.ParseIntPipe)),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Number]),
+    __metadata("design:returntype", Promise)
+], UserController.prototype, "deleteUser", null);
+__decorate([
+    (0, common_1.Get)('is-superadmin'),
+    __param(0, (0, common_1.Query)('walletAddress')),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [String]),
+    __metadata("design:returntype", Promise)
+], UserController.prototype, "isSuperadmin", null);
 exports.UserController = UserController = __decorate([
     (0, common_1.Controller)('users'),
     __metadata("design:paramtypes", [user_service_1.UserService])

@@ -1,9 +1,17 @@
 /* eslint-disable prettier/prettier */
+ 
+/* eslint-disable prettier/prettier */
+ 
+/* eslint-disable prettier/prettier */
+ 
+/* eslint-disable prettier/prettier */
+ 
 /* eslint-disable prettier/prettier */
 /* eslint-disable prettier/prettier */
 /* eslint-disable prettier/prettier */
 /* eslint-disable prettier/prettier */
-import { Controller, Post, Body, Get, Query, Param, NotFoundException } from '@nestjs/common';
+/* eslint-disable prettier/prettier */
+import { Controller, Post, Body, Get, Put, Query, Delete, Param, NotFoundException, ParseIntPipe } from '@nestjs/common';
 import { UserService } from './user.service';
 
 
@@ -20,7 +28,7 @@ export class UserController {
     async addAdmin(@Body() body: { walletAddress: string; email: string }) {
         return this.userService.addAdminUnified(body.walletAddress, body.email);
     }
-        @Get('get-role')
+    @Get('get-role')
     async getRole(@Query('walletAddress') walletAddress: string) {
         return this.userService.getRole(walletAddress);
     }
@@ -31,4 +39,44 @@ export class UserController {
         if (!user) throw new NotFoundException('Student not found');
         return user;
     }
+
+  // --- NEW: GET USERS (with search, pagination, filter) ---
+  @Get()
+  async getUsers(
+    @Query('role') role: string,
+    @Query('search') search: string,
+    @Query('page') page: string,
+    @Query('pageSize') pageSize: string,
+    @Query('programId') programId: string,
+  ) {
+    return this.userService.getUsers({
+      role,
+      search,
+      page: Number(page) || 1,
+      pageSize: Number(pageSize) || 10,
+      programId: programId ? Number(programId) : undefined,
+    });
+  }
+
+  // --- NEW: UPDATE USER (Admin or Student) ---
+  @Put(':id')
+  async updateUser(@Param('id', ParseIntPipe) id: number, @Body() body: any) {
+    const updated = await this.userService.updateUser(id, body);
+    if (!updated) throw new NotFoundException('User not found');
+    return updated;
+  }
+
+  // --- NEW: DELETE USER ---
+  @Delete(':id')
+  async deleteUser(@Param('id', ParseIntPipe) id: number) {
+    const deleted = await this.userService.deleteUser(id);
+    if (!deleted) throw new NotFoundException('User not found or already deleted');
+    return { success: true };
+  }
+
+  @Get('is-superadmin')
+  async isSuperadmin(@Query('walletAddress') walletAddress: string) {
+    const isSuperadmin = await this.userService.isSuperadmin(walletAddress);
+    return { isSuperadmin };
+  }
 }

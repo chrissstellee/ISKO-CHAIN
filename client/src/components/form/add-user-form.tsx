@@ -3,7 +3,11 @@
 import React, { useState, useEffect } from "react";
 import MySwal from "@/lib/swal";
 
-export default function AddUserForm() {
+interface AddUserFormProps {
+  onUserAdded?: () => void;
+}
+
+export default function AddUserForm({ onUserAdded }: AddUserFormProps) {
   const [walletAddress, setWalletAddress] = useState('');
   const [studentId, setStudentId] = useState('');
   const [role, setRole] = useState(''); // default: empty string for "-- Select Role --"
@@ -56,6 +60,7 @@ export default function AddUserForm() {
               text: "The student was successfully added!",
               confirmButtonColor: "#b71c1c",
             });
+            if (onUserAdded) onUserAdded();
         }
         else {
             const data = await res.json().catch(() => ({}));
@@ -82,6 +87,7 @@ export default function AddUserForm() {
               text: "The admin was successfully added!",
               confirmButtonColor: "#b71c1c",
             });
+            if (onUserAdded) onUserAdded();
           } else {
             const data = await res.json().catch(() => ({}));
             await MySwal.fire({

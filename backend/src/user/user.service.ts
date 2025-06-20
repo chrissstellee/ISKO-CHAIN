@@ -1,4 +1,6 @@
 /* eslint-disable prettier/prettier */
+/* eslint-disable @typescript-eslint/no-unsafe-return */
+/* eslint-disable prettier/prettier */
 /* eslint-disable @typescript-eslint/no-unsafe-argument */
 /* eslint-disable prettier/prettier */
 /* eslint-disable @typescript-eslint/no-unsafe-call */
@@ -140,5 +142,64 @@ export class UserService {
         }
       },
     });
+  }
+
+
+  async getUsers({ role, search, page, pageSize, programId }) {
+    // Example using Prisma ORM
+    const where: any = { role };
+    if (search) {
+      where.OR = [
+        { firstName: { contains: search, mode: 'insensitive' } },
+        { lastName: { contains: search, mode: 'insensitive' } },
+        { studentId: { contains: search } },
+        { walletAddress: { contains: search } },
+        { email: { contains: search } },
+      ];
+    }
+    if (role === 'student' && programId) {
+      where.programId = programId;
+    }
+    const [users, total] = await this.prisma.$transaction([
+      this.prisma.user.findMany({
+        where,
+        skip: (page - 1) * pageSize,
+        take: pageSize,
+        include: { program: true }, // include program relation for students
+        orderBy: { id: 'desc' }
+      }),
+      this.prisma.user.count({ where }),
+    ]);
+    return { users, total };
+  }
+
+  async updateUser(id: number, body: any) {
+    // Only update allowed fields based on role!
+    // body: { email? ...student fields? }
+    return this.prisma.user.update({
+      where: { id },
+      data: body,
+    });
+  }
+
+  async deleteUser(id: number) {
+    // Could use soft delete if you want
+    return this.prisma.user.delete({
+      where: { id },
+    });
+  }
+
+  async isSuperadmin(walletAddress: string): Promise<boolean> {
+    if (!walletAddress) return false;
+    const provider = new ethers.JsonRpcProvider(process.env.RPC_URL);
+    const contract = new ethers.Contract(
+      process.env.CONTRACT_ADDRESS!,
+      IskoChainCredentialABI,
+      provider
+    );
+    // Get the DEFAULT_ADMIN_ROLE bytes32 value
+    const DEFAULT_ADMIN_ROLE = await contract.DEFAULT_ADMIN_ROLE();
+    // Check if the walletAddress has this role
+    return await contract.hasRole(DEFAULT_ADMIN_ROLE, walletAddress);
   }
 }

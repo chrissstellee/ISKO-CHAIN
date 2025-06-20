@@ -106,6 +106,51 @@ let UserService = class UserService {
             },
         });
     }
+    async getUsers({ role, search, page, pageSize, programId }) {
+        const where = { role };
+        if (search) {
+            where.OR = [
+                { firstName: { contains: search, mode: 'insensitive' } },
+                { lastName: { contains: search, mode: 'insensitive' } },
+                { studentId: { contains: search } },
+                { walletAddress: { contains: search } },
+                { email: { contains: search } },
+            ];
+        }
+        if (role === 'student' && programId) {
+            where.programId = programId;
+        }
+        const [users, total] = await this.prisma.$transaction([
+            this.prisma.user.findMany({
+                where,
+                skip: (page - 1) * pageSize,
+                take: pageSize,
+                include: { program: true },
+                orderBy: { id: 'desc' }
+            }),
+            this.prisma.user.count({ where }),
+        ]);
+        return { users, total };
+    }
+    async updateUser(id, body) {
+        return this.prisma.user.update({
+            where: { id },
+            data: body,
+        });
+    }
+    async deleteUser(id) {
+        return this.prisma.user.delete({
+            where: { id },
+        });
+    }
+    async isSuperadmin(walletAddress) {
+        if (!walletAddress)
+            return false;
+        const provider = new ethers_1.ethers.JsonRpcProvider(process.env.RPC_URL);
+        const contract = new ethers_1.ethers.Contract(process.env.CONTRACT_ADDRESS, IskoChainCredential_json_1.default, provider);
+        const DEFAULT_ADMIN_ROLE = await contract.DEFAULT_ADMIN_ROLE();
+        return await contract.hasRole(DEFAULT_ADMIN_ROLE, walletAddress);
+    }
 };
 exports.UserService = UserService;
 exports.UserService = UserService = __decorate([
