@@ -1,0 +1,8 @@
+{
+  "base-sepolia": {
+    "IskoChainCredential": {
+      "address": "0x89b733a7d847028d7D9270E07e70def436dA5bF3",
+      "startBlock": 26903867
+    }
+  }
+}
