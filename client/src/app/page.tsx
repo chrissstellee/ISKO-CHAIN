@@ -1,6 +1,7 @@
 'use client';
 
 import Image from 'next/image';
+import Link from "next/link";
 import '@/styles/landing-style.css';
 import { ConnectButton } from "@rainbow-me/rainbowkit";
 import { useEffect, useState } from "react";
@@ -18,7 +19,7 @@ export default function LandingPage() {
     if (isConnected && address) {
       setCheckingRole(true);
       // Call your backend API to get role
-      fetch(`http://localhost:3001/users/get-role?walletAddress=${address}`)
+        fetch(`http://localhost:3001/users/get-role?walletAddress=${address}`)
         .then(res => res.json())
         .then(data => {
           setCheckingRole(false);
@@ -28,9 +29,8 @@ export default function LandingPage() {
             router.push('/student');
           } else if (data.role === 'admin') {
             router.push('/admin');
-          } else if (data.role === 'employer') {
-            router.push('/verifier');
           }
+          // No auto-redirect to verifier; verifier is always public
         })
         .catch(() => setCheckingRole(false));
     }
@@ -49,7 +49,7 @@ export default function LandingPage() {
 
   return (
     <div className="landing-container">
-      <div className="landing-bar" /> 
+      <div className="landing-bar" />
 
       <div className="landing-card">
         <Image
@@ -69,9 +69,31 @@ export default function LandingPage() {
 
         {checkingRole && <div style={{ marginTop: 12 }}>Checking user role...</div>}
         {showRegistration && <RegistrationModal />}
+
+        {/* PUBLIC verifier access button */}
+        <a
+          href="/verifier"
+          className="public-verifier-btn"
+        >
+          Verify a Credential (Public)
+        </a>
+
+        {/* Terms & Conditions link */}
+        <div style={{ marginTop: 28, textAlign: 'center' }}>
+          <Link href="/terms">
+            <span style={{
+              color: "#888",
+              textDecoration: "underline",
+              fontSize: 13,
+              cursor: "pointer"
+            }}>
+              Terms & Conditions
+            </span>
+          </Link>
+        </div>
       </div>
 
-      <div className="landing-bar" /> 
+      <div className="landing-bar" />
     </div>
   );
 }

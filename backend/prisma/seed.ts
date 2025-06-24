@@ -39,7 +39,6 @@ async function main() {
     },
   ];
 
-  // Seed programs
   for (const program of programs) {
     await prisma.program.upsert({
       where: { abbreviation: program.abbreviation },
