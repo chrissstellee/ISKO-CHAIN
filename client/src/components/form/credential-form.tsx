@@ -18,7 +18,11 @@ import "@/styles/table.css";
 import "@/styles/chip.css";
 
 const CONTRACT_ADDRESS = process.env.NEXT_PUBLIC_DEPLOYED_CONTRACT_ADDRESS;
-const SUBGRAPH_URL = "https://api.studio.thegraph.com/query/113934/isko-chain/version/latest";
+const API_URL = process.env.BACKEND_URL;
+const SUBGRAPH_URL = process.env.NEXT_PUBLIC_SUBGRAPH_URL;
+if (!SUBGRAPH_URL) {
+  throw new Error("NEXT_PUBLIC_SUBGRAPH_URL environment variable is not set");
+}
 const client = createClient({
   url: SUBGRAPH_URL,
   exchanges: [cacheExchange, fetchExchange],
@@ -40,7 +44,7 @@ async function hasActiveDegreeCertificate(studentId: string): Promise<boolean> {
     }
   `;
   try {
-    const res = await fetch(SUBGRAPH_URL, {
+    const res = await fetch(SUBGRAPH_URL!, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ query, variables: { studentId } }),
@@ -63,7 +67,7 @@ async function waitForSubgraphCredential(credentialCode: string, maxWaitMs = 100
   `;
   const start = Date.now();
   while (Date.now() - start < maxWaitMs) {
-    const res = await fetch(SUBGRAPH_URL, {
+    const res = await fetch(SUBGRAPH_URL!, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ query, variables: { code: credentialCode } }),
@@ -77,7 +81,7 @@ async function waitForSubgraphCredential(credentialCode: string, maxWaitMs = 100
     await new Promise(res => setTimeout(res, 1500));
   }
   // Final check
-  const res = await fetch(SUBGRAPH_URL, {
+  const res = await fetch(SUBGRAPH_URL!, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ query, variables: { code: credentialCode } }),
@@ -164,7 +168,7 @@ export default function IssueCredentialsForm({ onSubmit, onIssueSuccess }: Props
         const signer = await provider.getSigner();
         const signature = await signer.signMessage(message);
 
-        const res = await fetch('http://localhost:3001/auth/me', {
+        const res = await fetch(`${API_URL}/auth/me`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ address, signature, message }),
@@ -195,7 +199,7 @@ export default function IssueCredentialsForm({ onSubmit, onIssueSuccess }: Props
 
     debounceTimeout.current = setTimeout(async () => {
       try {
-        const res = await fetch(`http://localhost:3001/users/by-student-id/${studentId}`);
+        const res = await fetch(`${API_URL}/users/by-student-id/${studentId}`);
         if (!res.ok) throw new Error("Student not found");
         const user = await res.json();
         setFirstName(user.firstName || "");
@@ -287,7 +291,7 @@ export default function IssueCredentialsForm({ onSubmit, onIssueSuccess }: Props
       };
 
       // Backend issues metadata
-      const res = await fetch("http://localhost:3001/credentials/issue", {
+      const res = await fetch(`${API_URL}/credentials/issue`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(credentialMetadata),

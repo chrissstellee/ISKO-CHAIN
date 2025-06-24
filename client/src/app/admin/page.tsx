@@ -1,3 +1,4 @@
+ 
 'use client';
 
 import Navbar from '@/components/navbar';
@@ -18,10 +19,13 @@ import '@/styles/inputs.css';
 import '@/styles/table.css';
 import '@/styles/chip.css';
 
+const API_URL = process.env.BACKEND_URL;
 export default function Admin() {
   const { address, isConnected } = useAccount();
   const router = useRouter();
   const [checkingAuth, setCheckingAuth] = useState(true);
+
+
 
   // Shared refresh counter for activity and dashboard
   const [refreshCount, setRefreshCount] = useState(0);
@@ -31,7 +35,7 @@ export default function Admin() {
       router.replace('/');
       return;
     }
-    fetch(`http://localhost:3001/users/get-role?walletAddress=${address}`)
+    fetch(`${API_URL}/users/get-role?walletAddress=${address}`)
       .then(res => res.json())
       .then(data => {
         if (!data.role || data.role !== 'admin') {

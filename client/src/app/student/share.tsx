@@ -3,6 +3,7 @@ import React, { useState } from 'react';
 import QRCodeModal from '@/components/modal/student-qr';
 import MySwal from "@/lib/swal"; // ← Add this import
 
+const VERIFIER_URL = process.env.NEXT_PUBLIC_VERIFIER_URL;
 type Credential = {
   tokenId: string;
   credentialType?: string;
@@ -28,7 +29,7 @@ export default function ShareCredentials({ credentials, loading }: ShareCredenti
   // Build the sharing link based on selected credential
   const selectedCredential = activeCredentials.find((c) => c.tokenId === selectedTokenId);
   const shareLink = selectedCredential
-    ? `http://192.168.100.199:3000/verifier?tokenId=${selectedCredential.tokenId}`
+    ? `${VERIFIER_URL}/verifier?tokenId=${selectedCredential.tokenId}`
     : "";
 
   // --- Suite Alert implementation for "copy link" ---

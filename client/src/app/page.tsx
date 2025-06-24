@@ -8,6 +8,7 @@ import { useEffect, useState } from "react";
 import { useAccount } from "wagmi";
 import { useRouter } from "next/navigation";
 
+const API_URL = process.env.BACKEND_URL;
 export default function LandingPage() {
   const { address, isConnected } = useAccount();
   const router = useRouter();
@@ -19,7 +20,7 @@ export default function LandingPage() {
     if (isConnected && address) {
       setCheckingRole(true);
       // Call your backend API to get role
-        fetch(`http://localhost:3001/users/get-role?walletAddress=${address}`)
+        fetch(`${API_URL}/users/get-role?walletAddress=${address}`)
         .then(res => res.json())
         .then(data => {
           setCheckingRole(false);

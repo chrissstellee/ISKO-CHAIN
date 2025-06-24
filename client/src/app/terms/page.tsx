@@ -233,7 +233,7 @@ export default function TermsPage() {
                     <div className="bg-blue-50 p-4 rounded-lg">
                       <p><strong>Polytechnic University of the Philippines</strong></p>
                       <p>ISKO-CHAIN Support Team</p>
-                      <p>Email: iskochain@pup.edu.ph</p>
+                      <p>Email: carlaldreydbergado@iskolarngbayan.pup.edu.ph</p>
                       <p>Website: www.pup.edu.ph</p>
                     </div>
                   </div>

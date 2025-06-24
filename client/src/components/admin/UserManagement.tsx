@@ -5,7 +5,7 @@ import AddUserForm from "@/components/form/add-user-form";
 import { useAccount } from "wagmi";
 import MySwal from "@/lib/swal"; // SuiteAlert wrapper
 
-
+const API_URL = process.env.BACKEND_URL;
 interface Program {
   id: number;
   name: string;
@@ -48,7 +48,7 @@ export default function UserManagement() {
   // Fetch programs for filtering and student editing
   useEffect(() => {
     if (tab === "student") {
-      fetch("http://localhost:3001/programs")
+      fetch(`${API_URL}/programs`)
         .then(res => res.json())
         .then(setPrograms)
         .catch(() => setPrograms([]));
@@ -64,7 +64,7 @@ export default function UserManagement() {
 
   useEffect(() => {
   if (address) {
-    fetch(`http://localhost:3001/users/is-superadmin?walletAddress=${address}`)
+    fetch(`${API_URL}/users/is-superadmin?walletAddress=${address}`)
       .then(res => res.json())
       .then(data => setIsSuperadmin(Boolean(data.isSuperadmin)))
       .catch(() => setIsSuperadmin(false));
@@ -85,7 +85,7 @@ export default function UserManagement() {
         if (tab === "student" && filterProgramId) {
         params.append("programId", String(filterProgramId));
         }
-        const res = await fetch(`http://localhost:3001/users?${params.toString()}`);
+        const res = await fetch(`${API_URL}/users?${params.toString()}`);
         const data = await res.json();
 
         // Defensive: handle either array or object with .users
@@ -118,7 +118,7 @@ export default function UserManagement() {
     e.preventDefault();
     setModalLoading(true);
     try {
-      let endpoint = `http://localhost:3001/users/${editUser?.id}`;
+      let endpoint = `${API_URL}/users/${editUser?.id}`;
       let method = "PUT";
       let body: any = {};
       if (editUser?.role === "admin") {
@@ -173,7 +173,7 @@ export default function UserManagement() {
       confirmButtonText: "Delete",
     });
     if (!result.isConfirmed) return;
-    await fetch(`http://localhost:3001/users/${user.id}`, { method: "DELETE" });
+    await fetch(`${API_URL}/users/${user.id}`, { method: "DELETE" });
     await MySwal.fire({
       icon: "success",
       title: "Deleted",

@@ -10,7 +10,10 @@ import "@/styles/card.css";
 import "@/styles/text.css";
 import "@/styles/button.css";
 
-const SUBGRAPH_URL = "https://api.studio.thegraph.com/query/113934/isko-chain/version/latest";
+const SUBGRAPH_URL = process.env.NEXT_PUBLIC_SUBGRAPH_URL;
+if (!SUBGRAPH_URL) {
+  throw new Error("NEXT_PUBLIC_SUBGRAPH_URL environment variable is not set");
+}
 const client = createClient({
   url: SUBGRAPH_URL,
   exchanges: [cacheExchange, fetchExchange],

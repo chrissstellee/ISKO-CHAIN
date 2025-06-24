@@ -11,7 +11,7 @@ import BlockchainTableLoader from "@/components/ui/loading";
 import MySwal from "@/lib/swal"; // <-- SweetAlert2 instance
 
 const CONTRACT_ADDRESS = process.env.NEXT_PUBLIC_DEPLOYED_CONTRACT_ADDRESS as string;
-
+const API_URL = process.env.BACKEND_URL;
 function getStatusClass(action: string) {
   switch (action) {
     case "Issued": return "chip success";
@@ -22,7 +22,7 @@ function getStatusClass(action: string) {
 }
 
 async function waitForSubgraphStatus(tokenId: string, expectedStatus: string, maxWaitMs = 10000) {
-  const SUBGRAPH_URL = "https://api.studio.thegraph.com/query/113934/isko-chain/version/latest";
+  const SUBGRAPH_URL = process.env.NEXT_PUBLIC_SUBGRAPH_URL;
   const query = `
     query($id: ID!) {
       credential(id: $id) {
@@ -32,7 +32,7 @@ async function waitForSubgraphStatus(tokenId: string, expectedStatus: string, ma
   `;
   const start = Date.now();
   while (Date.now() - start < maxWaitMs) {
-    const res = await fetch(SUBGRAPH_URL, {
+    const res = await fetch(SUBGRAPH_URL!, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ query, variables: { id: tokenId } }),
@@ -175,7 +175,7 @@ export default function RecentActivity({ refreshCount, onAnyAction }: RecentActi
 
     try {
       // 1. Request new tokenURI from backend
-      const metaRes = await fetch("http://localhost:3001/credentials/issue", {
+      const metaRes = await fetch(`${API_URL}/credentials/issue`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({

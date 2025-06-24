@@ -3,6 +3,7 @@
 import React, { useState, useEffect } from "react";
 import MySwal from "@/lib/swal";
 
+const API_URL = process.env.BACKEND_URL;
 interface AddUserFormProps {
   onUserAdded?: () => void;
 }
@@ -24,7 +25,7 @@ export default function AddUserForm({ onUserAdded }: AddUserFormProps) {
   // Fetch program list on mount
   useEffect(() => {
     if (role !== 'student') return;
-    fetch('http://localhost:3001/programs')
+    fetch(`${API_URL}/programs`)
       .then(res => res.json())
       .then(data => setPrograms(data))
       .catch(() => setPrograms([]));
@@ -48,7 +49,7 @@ export default function AddUserForm({ onUserAdded }: AddUserFormProps) {
         payload.lastName = lastName;
         payload.yearLevel = yearLevel ? Number(yearLevel) : undefined;
         payload.programId = programId !== '' ? Number(programId) : undefined;
-        const res = await fetch('http://localhost:3001/users/bind-wallet', {
+        const res = await fetch(`${API_URL}/users/bind-wallet`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(payload),
@@ -75,7 +76,7 @@ export default function AddUserForm({ onUserAdded }: AddUserFormProps) {
 
       if (role === "admin") {
         payload.email = email;
-        const res = await fetch('http://localhost:3001/users/add-admin', {
+        const res = await fetch(`${API_URL}/users/add-admin`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ walletAddress, email }),
