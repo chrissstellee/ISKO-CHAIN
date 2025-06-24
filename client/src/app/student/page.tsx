@@ -22,7 +22,7 @@ import '@/styles/chip.css';
 import "@/styles/student.css";
 import "@/styles/share.css";
 
-const API_URL = process.env.BACKEND_URL;
+const API_URL = process.env.NEXT_PUBLIC_BACKEND_URL;
 const SUBGRAPH_URL = process.env.NEXT_PUBLIC_SUBGRAPH_URL;
 if (!SUBGRAPH_URL) {
   throw new Error("NEXT_PUBLIC_SUBGRAPH_URL environment variable is not set");

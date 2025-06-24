@@ -5,7 +5,7 @@ import AddUserForm from "@/components/form/add-user-form";
 import { useAccount } from "wagmi";
 import MySwal from "@/lib/swal"; // SuiteAlert wrapper
 
-const API_URL = process.env.BACKEND_URL;
+const API_URL = process.env.NEXT_PUBLIC_BACKEND_URL;
 interface Program {
   id: number;
   name: string;

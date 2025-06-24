@@ -11,7 +11,7 @@ import BlockchainTableLoader from "@/components/ui/loading";
 import MySwal from "@/lib/swal"; // <-- SweetAlert2 instance
 
 const CONTRACT_ADDRESS = process.env.NEXT_PUBLIC_DEPLOYED_CONTRACT_ADDRESS as string;
-const API_URL = process.env.BACKEND_URL;
+const API_URL = process.env.NEXT_PUBLIC_BACKEND_URL;
 function getStatusClass(action: string) {
   switch (action) {
     case "Issued": return "chip success";

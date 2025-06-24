@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 'use client';
 
-import { useState } from "react";
+import React, { useState } from "react";
 import { useSearchParams } from "next/navigation";
 import Navbar from '@/components/navbar';
 import CredentialDetails from "@/app/verifier/credential-details";

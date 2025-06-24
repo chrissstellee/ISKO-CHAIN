@@ -3,7 +3,7 @@
 import React, { useState, useEffect } from "react";
 import MySwal from "@/lib/swal";
 
-const API_URL = process.env.BACKEND_URL;
+const API_URL = process.env.NEXT_PUBLIC_BACKEND_URL;
 interface AddUserFormProps {
   onUserAdded?: () => void;
 }

@@ -12,7 +12,7 @@ if (!CONTRACT_ADDRESS) {
   throw new Error("NEXT_PUBLIC_DEPLOYED_CONTRACT_ADDRESS not set!");
 }
 
-const API_URL = process.env.BACKEND_URL;
+const API_URL = process.env.NEXT_PUBLIC_BACKEND_URL;
 const SUBGRAPH_URL = process.env.NEXT_PUBLIC_SUBGRAPH_URL;
 if (!SUBGRAPH_URL) {
   throw new Error("NEXT_PUBLIC_SUBGRAPH_URL environment variable is not set");

@@ -20,6 +20,7 @@ import '@/styles/table.css';
 import '@/styles/chip.css';
 
 const API_URL = process.env.BACKEND_URL;
+
 export default function Admin() {
   const { address, isConnected } = useAccount();
   const router = useRouter();
@@ -35,7 +36,7 @@ export default function Admin() {
       router.replace('/');
       return;
     }
-    fetch(`${API_URL}/users/get-role?walletAddress=${address}`)
+    fetch(`${API_URL}users/get-role?walletAddress=${address}`)
       .then(res => res.json())
       .then(data => {
         if (!data.role || data.role !== 'admin') {
