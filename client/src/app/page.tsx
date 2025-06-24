@@ -9,6 +9,7 @@ import { useAccount } from "wagmi";
 import { useRouter } from "next/navigation";
 
 const API_URL = process.env.BACKEND_URL;
+console.log("API_URL:", API_URL);
 export default function LandingPage() {
   const { address, isConnected } = useAccount();
   const router = useRouter();
